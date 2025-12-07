@@ -286,7 +286,7 @@ class PagoView:
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        pagos = self.controller.obtener_por_cliente(id_cliente)
+        pagos = self.controller.obtener_pagos_por_cliente(id_cliente)
 
         for p in pagos:
             estado = "Pagado" if p.pagado else "Pendiente"

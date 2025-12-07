@@ -21,6 +21,7 @@ class PagoController:
         """
         Genera un pago pendiente para cada cliente activo.
         mes → string "YYYY-MM".
+        Evita duplicaciones: sólo crea si NO existe un pago previo para ese cliente en ese mes.
         """
         self.db.conectar()
 
@@ -33,6 +34,23 @@ class PagoController:
         for fila in clientes:
             id_cliente = fila[0]
 
+            # -------------------------------
+            # 1. Verificación anti-duplicado
+            # -------------------------------
+            check_query = """
+                SELECT COUNT(*) 
+                FROM Pago 
+                WHERE id_cliente = ? AND mes = ?
+            """
+            existe = self.db.obtener_datos(check_query, (id_cliente, mes))[0][0]
+
+            if existe > 0:
+                # Ya hay un pago ese mes → saltar
+                continue
+
+            # -------------------------------
+            # 2. Crear pago nuevo
+            # -------------------------------
             datos = {
                 "id_cliente": id_cliente,
                 "mes": mes,
@@ -117,7 +135,7 @@ class PagoController:
     def obtener_todos_pagos(self):
         """Devuelve todos los pagos registrados."""
         self.db.conectar()
-        filas = self.db.obtener_datos("SELECT * FROM Pago")
+        filas = self.db.obtener_datos("SELECT * FROM Pago ORDER BY id_pago DESC")
         self.db.desconectar()
 
         pagos = []
@@ -159,7 +177,7 @@ class PagoController:
         """Devuelve todos los pagos de un cliente."""
         self.db.conectar()
         filas = self.db.obtener_datos(
-            "SELECT * FROM Pago WHERE id_cliente = ?",
+            "SELECT * FROM Pago WHERE id_cliente = ? ORDER BY mes DESC",
             (id_cliente,)
         )
         self.db.desconectar()
