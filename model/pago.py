@@ -1,40 +1,52 @@
 """
 Clase Pago.
 Modelo para gestionar los pagos mensuales de los clientes.
-Incluye el mes del recibo, su estado y algunos datos de apoyo.
+Incluye el mes del recibo, su estado y datos complementarios.
 """
 
 class Pago:
 
     # ---------------------------------------------------------
     #   CONSTRUCTOR
-    #   Crea un registro de pago asociado a un cliente.
     # ---------------------------------------------------------
-    def __init__(self, id_pago=None, id_cliente=None, mes="",
-                 fecha_generacion=None, pagado=False, fecha_pago=None,
-                 cuota=0.0, metodo_pago="", concepto=""):
-
+    def __init__(
+        self,
+        id_pago=None,
+        id_cliente=None,
+        mes="",
+        fecha_generacion=None,
+        pagado=False,
+        fecha_pago=None,
+        cuota=0.0,
+        metodo_pago="",
+        concepto=""
+    ):
         self.id_pago = id_pago
         self.id_cliente = id_cliente
         self.mes = mes
         self.fecha_generacion = fecha_generacion
-        self.pagado = pagado
+
+        # SQLite devuelve 0/1 → convertimos a bool
+        self.pagado = bool(pagado)
+
         self.fecha_pago = fecha_pago
 
-        # Campos adicionales no contemplados al inicio
-        self.cuota = cuota
-        self.metodo_pago = metodo_pago
-        self.concepto = concepto
+        # Asegurar tipo float
+        self.cuota = float(cuota) if cuota is not None else 0.0
+
+        # Evitar problemas si vienen como None
+        self.metodo_pago = metodo_pago or ""
+        self.concepto = concepto or ""
 
     # ---------------------------------------------------------
-    #   MÉTODOS ESPECIALES
+    #   REPRESENTACIÓN DE TEXTO
     # ---------------------------------------------------------
     def __str__(self):
         estado = "Pagado" if self.pagado else "Pendiente"
-        return f"Pago {self.mes} - {estado}"
+        return f"Pago {self.mes} | Cliente {self.id_cliente} | {estado}"
 
     # ---------------------------------------------------------
-    #   MÉTODOS DE UTILIDAD
+    #   CONVERTIR A DICCIONARIO (para exportar o logs)
     # ---------------------------------------------------------
     def to_dict(self):
         return {
@@ -49,6 +61,9 @@ class Pago:
             "concepto": self.concepto
         }
 
+    # ---------------------------------------------------------
+    #   CREAR OBJETO DESDE DICCIONARIO
+    # ---------------------------------------------------------
     @staticmethod
     def from_dict(data):
         return Pago(
@@ -59,6 +74,6 @@ class Pago:
             pagado=data.get("pagado", False),
             fecha_pago=data.get("fecha_pago"),
             cuota=data.get("cuota", 0.0),
-            metodo_pago=data.get("metodo_pago", ""),
-            concepto=data.get("concepto", "")
+            metodo_pago=data.get("metodo_pago"),
+            concepto=data.get("concepto")
         )

@@ -1,6 +1,6 @@
 """
 Vista de Aparatos
-Interfaz para gestionar aparatos
+Interfaz para gestionar aparatos del gimnasio.
 """
 
 import tkinter as tk
@@ -8,19 +8,16 @@ from tkinter import ttk, messagebox
 from controller.aparato_controller import AparatoController
 
 
-class AparatoView:
-    """
-    Ventana de gestión de aparatos.
-    Permite crear, modificar, eliminar y visualizar aparatos del gimnasio.
-    """
+class AparatoView(tk.Frame):
+    """Vista de gestión de aparatos (Frame)."""
 
     # ---------------------------------------------------------
     #   CONSTRUCTOR
     # ---------------------------------------------------------
-    def __init__(self, ventana):
-        self.ventana = ventana
-        self.ventana.title("Gestión de Aparatos")
-        self.ventana.geometry("800x600")
+    def __init__(self, parent, main_window):
+        """Inicializa la vista de aparatos dentro del panel principal."""
+        super().__init__(parent, bg="#ecf0f1")
+        self.main_window = main_window
 
         self.controller = AparatoController()
         self.id_aparato_seleccionado = None
@@ -32,18 +29,25 @@ class AparatoView:
     #   INTERFAZ
     # ---------------------------------------------------------
     def configurar_interfaz(self):
-        """Configura todos los elementos gráficos."""
+        """Configura todos los elementos gráficos de la vista."""
 
         titulo = tk.Label(
-            self.ventana,
+            self,
             text="Gestión de Aparatos",
             font=("Arial", 18, "bold"),
-            fg="#2ecc71"
+            fg="#2ecc71",
+            bg="#ecf0f1"
         )
         titulo.pack(pady=20)
 
         # -------- FORMULARIO --------
-        frame_form = tk.LabelFrame(self.ventana, text="Datos del Aparato", padx=20, pady=20)
+        frame_form = tk.LabelFrame(
+            self,
+            text="Datos del Aparato",
+            padx=20,
+            pady=20,
+            bg="#ecf0f1"
+        )
         frame_form.pack(padx=20, pady=10, fill="x")
 
         # NOMBRE
@@ -79,27 +83,47 @@ class AparatoView:
         self.text_descripcion.grid(row=3, column=1, pady=5, padx=10)
 
         # -------- BOTONES --------
-        frame_botones = tk.Frame(self.ventana)
+        frame_botones = tk.Frame(self, bg="#ecf0f1")
         frame_botones.pack(pady=10)
 
-        tk.Button(frame_botones, text="Nuevo",
-                  command=self.nuevo_aparato,
-                  bg="#2ecc71", fg="white", width=12).grid(row=0, column=0, padx=5)
+        tk.Button(
+            frame_botones,
+            text="Nuevo",
+            command=self.nuevo_aparato,
+            bg="#2ecc71",
+            fg="white",
+            width=12
+        ).grid(row=0, column=0, padx=5)
 
-        tk.Button(frame_botones, text="Guardar",
-                  command=self.guardar_aparato,
-                  bg="#3498db", fg="white", width=12).grid(row=0, column=1, padx=5)
+        tk.Button(
+            frame_botones,
+            text="Guardar",
+            command=self.guardar_aparato,
+            bg="#3498db",
+            fg="white",
+            width=12
+        ).grid(row=0, column=1, padx=5)
 
-        tk.Button(frame_botones, text="Modificar",
-                  command=self.modificar_aparato,
-                  bg="#f39c12", fg="white", width=12).grid(row=0, column=2, padx=5)
+        tk.Button(
+            frame_botones,
+            text="Modificar",
+            command=self.modificar_aparato,
+            bg="#f39c12",
+            fg="white",
+            width=12
+        ).grid(row=0, column=2, padx=5)
 
-        tk.Button(frame_botones, text="Eliminar",
-                  command=self.eliminar_aparato,
-                  bg="#e74c3c", fg="white", width=12).grid(row=0, column=3, padx=5)
+        tk.Button(
+            frame_botones,
+            text="Eliminar",
+            command=self.eliminar_aparato,
+            bg="#e74c3c",
+            fg="white",
+            width=12
+        ).grid(row=0, column=3, padx=5)
 
         # -------- TABLA --------
-        frame_tabla = tk.Frame(self.ventana)
+        frame_tabla = tk.Frame(self, bg="#ecf0f1")
         frame_tabla.pack(padx=20, pady=10, fill="both", expand=True)
 
         scrollbar = tk.Scrollbar(frame_tabla)
@@ -134,22 +158,30 @@ class AparatoView:
     #   ACCIONES
     # ---------------------------------------------------------
     def nuevo_aparato(self):
-        """Vacía el formulario para crear uno nuevo."""
+        """Limpia el formulario para crear un aparato nuevo."""
         self.limpiar_formulario()
         self.id_aparato_seleccionado = None
 
     def guardar_aparato(self):
-        """Guarda un aparato nuevo."""
+        """Guarda un aparato nuevo en la base de datos."""
         nombre = self.entry_nombre.get().strip()
         tipo = self.combo_tipo.get()
         estado = self.combo_estado.get()
         descripcion = self.text_descripcion.get("1.0", tk.END).strip()
 
         if not nombre or not tipo:
-            messagebox.showwarning("Advertencia", "Nombre y tipo son obligatorios.")
+            messagebox.showwarning(
+                "Advertencia",
+                "Nombre y tipo son obligatorios."
+            )
             return
 
-        nuevo_id = self.controller.crear_aparato(nombre, tipo, descripcion, estado)
+        nuevo_id = self.controller.crear_aparato(
+            nombre,
+            tipo,
+            descripcion,
+            estado
+        )
 
         if nuevo_id:
             messagebox.showinfo("Éxito", "Aparato guardado correctamente.")
@@ -161,7 +193,10 @@ class AparatoView:
     def modificar_aparato(self):
         """Modifica el aparato seleccionado."""
         if not self.id_aparato_seleccionado:
-            messagebox.showwarning("Advertencia", "Debe seleccionar un aparato.")
+            messagebox.showwarning(
+                "Advertencia",
+                "Debe seleccionar un aparato."
+            )
             return
 
         nombre = self.entry_nombre.get().strip()
@@ -170,7 +205,10 @@ class AparatoView:
         descripcion = self.text_descripcion.get("1.0", tk.END).strip()
 
         if not nombre or not tipo:
-            messagebox.showwarning("Advertencia", "Nombre y tipo son obligatorios.")
+            messagebox.showwarning(
+                "Advertencia",
+                "Nombre y tipo son obligatorios."
+            )
             return
 
         ok = self.controller.actualizar_aparato(
@@ -191,7 +229,10 @@ class AparatoView:
     def eliminar_aparato(self):
         """Elimina el aparato seleccionado."""
         if not self.id_aparato_seleccionado:
-            messagebox.showwarning("Advertencia", "Seleccione un aparato.")
+            messagebox.showwarning(
+                "Advertencia",
+                "Seleccione un aparato."
+            )
             return
 
         if messagebox.askyesno("Confirmar", "¿Eliminar este aparato?"):
@@ -208,20 +249,24 @@ class AparatoView:
     #   TABLA Y FORMULARIO
     # ---------------------------------------------------------
     def cargar_aparatos(self):
-        """Recarga el listado de aparatos."""
+        """Carga o recarga el listado de aparatos en la tabla."""
         for item in self.tree.get_children():
             self.tree.delete(item)
 
         aparatos = self.controller.obtener_todos_aparatos()
 
         for aparato in aparatos:
-            self.tree.insert("", "end", values=(
-                aparato.id_aparato,
-                aparato.nombre,
-                aparato.tipo,
-                aparato.estado,
-                aparato.descripcion
-            ))
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    aparato.id_aparato,
+                    aparato.nombre,
+                    aparato.tipo,
+                    aparato.estado,
+                    aparato.descripcion
+                )
+            )
 
     def seleccionar_aparato(self, event):
         """Carga los datos del aparato seleccionado en el formulario."""

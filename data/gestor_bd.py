@@ -5,16 +5,23 @@
 
 import sqlite3
 import os
+import hashlib
+
+# Excepciones personalizadas del sistema
+from excepciones import (
+    ErrorBaseDatos,
+    DBConexionError,
+    DBConsultaError,
+    DBInsercionError,
+    DBActualizacionError,
+    DBEliminacionError
+)
 
 
 class GestorBD:
     """Gestor de base de datos para el proyecto GymForTheMoment."""
 
-    # ---------------------------------------------------------
-    #   CONSTRUCTOR
-    # ---------------------------------------------------------
     def __init__(self, db_name="gym.db"):
-        """Define la ruta del archivo de base de datos."""
         self.db_path = os.path.join(os.path.dirname(__file__), db_name)
         self.conexion = None
         self.cursor = None
@@ -23,18 +30,16 @@ class GestorBD:
     #   CONEXIÓN / DESCONEXIÓN
     # ---------------------------------------------------------
     def conectar(self):
-        """Abre la conexión y habilita claves foráneas."""
         try:
             self.conexion = sqlite3.connect(self.db_path)
             self.conexion.execute("PRAGMA foreign_keys = ON")
             self.cursor = self.conexion.cursor()
             return True
+
         except sqlite3.Error as e:
-            print(f"[Error] No se pudo conectar: {e}")
-            return False
+            raise DBConexionError(f"No se pudo conectar a la base de datos: {e}")
 
     def desconectar(self):
-        """Cierra la conexión si existe."""
         if self.conexion:
             self.conexion.close()
 
@@ -42,7 +47,6 @@ class GestorBD:
     #   QUERIES GENÉRICAS
     # ---------------------------------------------------------
     def ejecutar_query(self, query, parametros=None):
-        """Ejecuta INSERT, UPDATE o DELETE."""
         try:
             if parametros:
                 self.cursor.execute(query, parametros)
@@ -51,12 +55,11 @@ class GestorBD:
 
             self.conexion.commit()
             return True
+
         except sqlite3.Error as e:
-            print(f"[Error al ejecutar query] {e}")
-            return False
+            raise DBConsultaError(f"Error ejecutando query: {e}\nQUERY: {query}")
 
     def obtener_datos(self, query, parametros=None):
-        """Ejecuta un SELECT y devuelve los resultados."""
         try:
             if parametros:
                 self.cursor.execute(query, parametros)
@@ -64,15 +67,14 @@ class GestorBD:
                 self.cursor.execute(query)
 
             return self.cursor.fetchall()
+
         except sqlite3.Error as e:
-            print(f"[Error al obtener datos] {e}")
-            return []
+            raise DBConsultaError(f"Error obteniendo datos: {e}\nQUERY: {query}")
 
     # ---------------------------------------------------------
     #   CRUD AUXILIAR
     # ---------------------------------------------------------
     def insertar(self, tabla, datos):
-        """Inserta un registro usando un diccionario {columna: valor}."""
         columnas = ', '.join(datos.keys())
         placeholders = ', '.join(['?' for _ in datos])
         query = f"INSERT INTO {tabla} ({columnas}) VALUES ({placeholders})"
@@ -81,12 +83,11 @@ class GestorBD:
             self.cursor.execute(query, tuple(datos.values()))
             self.conexion.commit()
             return self.cursor.lastrowid
+
         except sqlite3.Error as e:
-            print(f"[Error al insertar] {e}")
-            return None
+            raise DBInsercionError(f"Error al insertar en {tabla}: {e}")
 
     def actualizar(self, tabla, datos, condicion):
-        """Actualiza un registro según una condición."""
         set_clause = ', '.join([f"{k} = ?" for k in datos.keys()])
         query = f"UPDATE {tabla} SET {set_clause} WHERE {condicion}"
 
@@ -94,27 +95,25 @@ class GestorBD:
             self.cursor.execute(query, tuple(datos.values()))
             self.conexion.commit()
             return True
+
         except sqlite3.Error as e:
-            print(f"[Error al actualizar] {e}")
-            return False
+            raise DBActualizacionError(f"Error al actualizar en {tabla}: {e}")
 
     def eliminar(self, tabla, condicion):
-        """Elimina registros según una condición."""
         query = f"DELETE FROM {tabla} WHERE {condicion}"
+
         try:
             self.cursor.execute(query)
             self.conexion.commit()
             return True
+
         except sqlite3.Error as e:
-            print(f"[Error al eliminar] {e}")
-            return False
+            raise DBEliminacionError(f"Error al eliminar en {tabla}: {e}")
 
     # ---------------------------------------------------------
     #   CREACIÓN DE TABLAS
     # ---------------------------------------------------------
     def crear_tablas(self):
-        """Crea todas las tablas necesarias del sistema."""
-
         tablas = [
 
             # -------- CLIENTE --------
@@ -171,8 +170,38 @@ class GestorBD:
                 concepto TEXT,
                 FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente)
             );
+            """,
+
+            # -------- USUARIO --------
+            """
+            CREATE TABLE IF NOT EXISTS Usuario (
+                id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL
+            );
             """
         ]
 
-        for tabla in tablas:
-            self.ejecutar_query(tabla)
+        for t in tablas:
+            self.ejecutar_query(t)
+
+        self.insertar_usuario_por_defecto()
+
+    # ---------------------------------------------------------
+    #   USUARIO POR DEFECTO
+    # ---------------------------------------------------------
+    def insertar_usuario_por_defecto(self):
+        query = "SELECT COUNT(*) FROM Usuario WHERE usuario = 'admin'"
+        resultado = self.obtener_datos(query)
+
+        if resultado and resultado[0][0] == 0:
+            password = "admin123"
+            password_hash = hashlib.sha256(password.encode()).hexdigest()
+
+            datos = {
+                "usuario": "admin",
+                "password_hash": password_hash
+            }
+
+            self.insertar("Usuario", datos)
+            print("[INFO] Usuario admin creado por defecto")

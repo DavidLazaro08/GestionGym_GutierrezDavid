@@ -1,37 +1,52 @@
 """
 Clase Cliente.
 Modelo básico para representar a los clientes del gimnasio.
-Guarda sus datos principales y ofrece algunos métodos de apoyo.
+Gestiona sus datos principales y ofrece utilidades auxiliares.
 """
 
 class Cliente:
 
     # ---------------------------------------------------------
     #   CONSTRUCTOR
-    #   Crea un nuevo cliente con sus datos esenciales.
     # ---------------------------------------------------------
-    def __init__(self, id_cliente=None, nombre="", apellidos="", dni="",
-                 email="", telefono="", fecha_alta=None, estado="activo"):
+    def __init__(
+        self,
+        id_cliente=None,
+        nombre="",
+        apellidos="",
+        dni="",
+        email="",
+        telefono="",
+        fecha_alta=None,
+        estado="activo"
+    ):
+        # Normalización básica
+        self.id_cliente = int(id_cliente) if id_cliente is not None else None
 
-        self.id_cliente = id_cliente
-        self.nombre = nombre
-        self.apellidos = apellidos
-        self.dni = dni
-        self.email = email
-        self.telefono = telefono
-        self.fecha_alta = fecha_alta
-        self.estado = estado
+        self.nombre = nombre or ""
+        self.apellidos = apellidos or ""
+        self.dni = dni or ""
+        self.email = email or ""
+        self.telefono = telefono or ""
+
+        # Puede venir como None desde SQLite
+        self.fecha_alta = fecha_alta or ""
+
+        # Por defecto "activo"
+        self.estado = estado or "activo"
 
     # ---------------------------------------------------------
-    #   MÉTODOS ESPECIALES
-    #   Representación sencilla del cliente al imprimirlo.
+    #   REPRESENTACIÓN DE TEXTO
     # ---------------------------------------------------------
     def __str__(self):
         return f"{self.nombre} {self.apellidos} - DNI: {self.dni}"
 
+    def __repr__(self):
+        """Ayuda a depurar en consola."""
+        return f"<Cliente {self.id_cliente}: {self.nombre_completo}>"
+
     # ---------------------------------------------------------
-    #   MÉTODOS DE UTILIDAD
-    #   Conversión a dict y creación desde dict.
+    #   CONVERSIÓN A DICCIONARIO
     # ---------------------------------------------------------
     def to_dict(self):
         return {
@@ -45,6 +60,9 @@ class Cliente:
             "estado": self.estado
         }
 
+    # ---------------------------------------------------------
+    #   CREACIÓN DESDE DICCIONARIO
+    # ---------------------------------------------------------
     @staticmethod
     def from_dict(data):
         return Cliente(
@@ -59,15 +77,25 @@ class Cliente:
         )
 
     # ---------------------------------------------------------
-    #   PROPIEDADES OPCIONALES
-    #   Acceso cómodo al nombre completo.
+    #   PROPIEDADES
     # ---------------------------------------------------------
     @property
     def nombre_completo(self):
-        return f"{self.nombre} {self.apellidos}"
+        """Devuelve 'Nombre Apellidos' bien formateado."""
+        nombre = self.nombre.strip()
+        apellidos = self.apellidos.strip()
+        return f"{nombre} {apellidos}".strip()
 
     @nombre_completo.setter
     def nombre_completo(self, valor):
-        partes = valor.split(" ", 1)
-        self.nombre = partes[0]
-        self.apellidos = partes[1] if len(partes) > 1 else ""
+        """
+        Permite asignar 'Nombre Apellidos' directamente.
+        Soporta nombres o apellidos compuestos.
+        """
+        partes = valor.strip().split(" ")
+        if len(partes) == 1:
+            self.nombre = partes[0]
+            self.apellidos = ""
+        else:
+            self.nombre = partes[0]
+            self.apellidos = " ".join(partes[1:])

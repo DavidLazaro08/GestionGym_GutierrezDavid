@@ -6,21 +6,20 @@ Interfaz para gestionar pagos mensuales de los clientes.
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date, datetime
+
 from controller.pago_controller import PagoController
 from controller.cliente_controller import ClienteController
 from util.helpers import formatear_fecha, formatear_cuota
-from view.ventana_pago import VentanaPago
-from model.pago import Pago
 from util.validaciones import validar_fecha
+from view.ventana_pago import VentanaPago
 
 
-class PagoView:
-    """Ventana de gestión de pagos."""
+class PagoView(tk.Frame):
+    """Vista de gestión de pagos (Frame)."""
 
-    def __init__(self, ventana):
-        self.ventana = ventana
-        self.ventana.title("Gestión de Pagos")
-        self.ventana.geometry("1100x650")
+    def __init__(self, parent, main_window):
+        super().__init__(parent, bg="#ecf0f1")
+        self.main_window = main_window
 
         self.controller = PagoController()
         self.cliente_controller = ClienteController()
@@ -38,18 +37,19 @@ class PagoView:
     def configurar_interfaz(self):
 
         titulo = tk.Label(
-            self.ventana,
+            self,
             text="Gestión de Pagos",
             font=("Arial", 20, "bold"),
-            fg="#f39c12"
+            fg="#f39c12",
+            bg="#ecf0f1"
         )
         titulo.pack(pady=15)
 
         # ---------------------------------------------------------
         #   GENERAR PAGOS DEL MES
         # ---------------------------------------------------------
-        frame_generar = tk.LabelFrame(self.ventana, text="Generar pagos del mes",
-                                      padx=15, pady=10)
+        frame_generar = tk.LabelFrame(self, text="Generar pagos del mes",
+                                      padx=15, pady=10, bg="#ecf0f1")
         frame_generar.pack(padx=20, pady=10, fill="x")
 
         tk.Label(frame_generar, text="Mes:").grid(row=0, column=0, padx=5)
@@ -72,23 +72,16 @@ class PagoView:
         )
         self.combo_anio.grid(row=0, column=3, padx=5)
 
-        # ---------------------------------------------------------
-        #   SELECCIÓN AUTOMÁTICA DE MES Y AÑO ACTUAL
-        # ---------------------------------------------------------
+        # Selección automática mes/año actual
         hoy = datetime.now()
-        mes_actual = hoy.month       # 1-12
-        anio_actual = hoy.year       # ej. 2025
+        self.combo_mes.current(hoy.month - 1)
 
-        # Selecciona mes correspondiente (combo 0–11)
-        self.combo_mes.current(mes_actual - 1)
-
-        # Años: si el actual no está, lo añadimos
         valores_anio = list(self.combo_anio["values"])
-        if str(anio_actual) not in valores_anio:
-            valores_anio.append(str(anio_actual))
+        if str(hoy.year) not in valores_anio:
+            valores_anio.append(str(hoy.year))
             self.combo_anio["values"] = valores_anio
 
-        self.combo_anio.set(str(anio_actual))
+        self.combo_anio.set(str(hoy.year))
 
         tk.Button(
             frame_generar,
@@ -100,7 +93,7 @@ class PagoView:
         # ---------------------------------------------------------
         #   FILTROS
         # ---------------------------------------------------------
-        frame_filtros = tk.LabelFrame(self.ventana, text="Filtros", padx=15, pady=10)
+        frame_filtros = tk.LabelFrame(self, text="Filtros", padx=15, pady=10, bg="#ecf0f1")
         frame_filtros.pack(padx=20, pady=10, fill="x")
 
         tk.Label(frame_filtros, text="Cliente:").grid(row=0, column=0, padx=5)
@@ -131,7 +124,7 @@ class PagoView:
         # ---------------------------------------------------------
         #   TABLA
         # ---------------------------------------------------------
-        frame_tabla = tk.Frame(self.ventana)
+        frame_tabla = tk.Frame(self, bg="#ecf0f1")
         frame_tabla.pack(padx=20, pady=10, fill="both", expand=True)
 
         scrollbar = tk.Scrollbar(frame_tabla)
@@ -170,7 +163,7 @@ class PagoView:
         # ---------------------------------------------------------
         #   BOTONES DE ACCIÓN
         # ---------------------------------------------------------
-        frame_acciones = tk.Frame(self.ventana)
+        frame_acciones = tk.Frame(self, bg="#ecf0f1")
         frame_acciones.pack(pady=10)
 
         tk.Button(
@@ -198,80 +191,92 @@ class PagoView:
     #   CARGA DE CLIENTES
     # ---------------------------------------------------------
     def cargar_clientes(self):
-        clientes = self.cliente_controller.obtener_todos_clientes()
-        valores = []
+        try:
+            clientes = self.cliente_controller.obtener_todos_clientes()
+            valores = []
 
-        for c in clientes:
-            texto = f"{c.id_cliente} - {c.nombre} {c.apellidos}"
-            valores.append(texto)
-            self.clientes_dict[c.id_cliente] = f"{c.nombre} {c.apellidos}"
+            for c in clientes:
+                texto = f"{c.id_cliente} - {c.nombre} {c.apellidos}"
+                valores.append(texto)
+                self.clientes_dict[c.id_cliente] = f"{c.nombre} {c.apellidos}"
 
-        self.combo_filtro_cliente["values"] = valores
+            self.combo_filtro_cliente["values"] = valores
+
+        except Exception as e:
+            messagebox.showerror("Error cargando clientes", str(e))
 
     # ---------------------------------------------------------
     #   GENERAR PAGOS DEL MES
     # ---------------------------------------------------------
     def generar_pagos_mes(self):
-        mes_num = self.combo_mes.get().split(" ")[0]
-        anio = self.combo_anio.get()
-        mes_formato = f"{anio}-{mes_num}"
+        try:
+            mes_num = self.combo_mes.get().split(" ")[0]
+            anio = self.combo_anio.get()
+            mes_formato = f"{anio}-{mes_num}"
 
-        cantidad = self.controller.generar_pagos_mensuales(mes_formato)
+            cantidad = self.controller.generar_pagos_mensuales(mes_formato)
 
-        messagebox.showinfo(
-            "Pagos generados",
-            f"Se han creado {cantidad} pagos pendientes."
-        )
-        self.cargar_pagos()
+            messagebox.showinfo(
+                "Pagos generados",
+                f"Se han creado {cantidad} pagos pendientes."
+            )
+            self.cargar_pagos()
+
+        except Exception as e:
+            messagebox.showerror("Error generando pagos", str(e))
 
     # ---------------------------------------------------------
     #   TABLA
     # ---------------------------------------------------------
     def cargar_pagos(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        try:
+            self.tree.delete(*self.tree.get_children())
+            pagos = self.controller.obtener_todos_pagos()
 
-        pagos = self.controller.obtener_todos_pagos()
-
-        for p in pagos:
-            nombre = self.clientes_dict.get(p.id_cliente, "Desconocido")
-            estado = "Pagado" if p.pagado else "Pendiente"
-
-            self.tree.insert("", "end", values=(
-                p.id_pago,
-                p.id_cliente,
-                nombre,
-                p.mes,
-                estado,
-                formatear_fecha(p.fecha_generacion),
-                formatear_fecha(p.fecha_pago),
-                formatear_cuota(p.cuota),
-                p.metodo_pago or "",
-                p.concepto or ""
-            ))
-
-    def mostrar_pendientes(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        pagos = self.controller.obtener_todos_pagos()
-
-        for p in pagos:
-            if not p.pagado:
+            for p in pagos:
                 nombre = self.clientes_dict.get(p.id_cliente, "Desconocido")
+                estado = "Pagado" if p.pagado else "Pendiente"
 
                 self.tree.insert("", "end", values=(
                     p.id_pago,
                     p.id_cliente,
                     nombre,
                     p.mes,
-                    "Pendiente",
+                    estado,
                     formatear_fecha(p.fecha_generacion),
-                    "",
+                    formatear_fecha(p.fecha_pago),
                     formatear_cuota(p.cuota),
-                    "",
-                    ""
+                    p.metodo_pago or "",
+                    p.concepto or ""
                 ))
+
+        except Exception as e:
+            messagebox.showerror("Error cargando pagos", str(e))
+
+    def mostrar_pendientes(self):
+        try:
+            self.tree.delete(*self.tree.get_children())
+            pagos = self.controller.obtener_todos_pagos()
+
+            for p in pagos:
+                if not p.pagado:
+                    nombre = self.clientes_dict.get(p.id_cliente, "Desconocido")
+
+                    self.tree.insert("", "end", values=(
+                        p.id_pago,
+                        p.id_cliente,
+                        nombre,
+                        p.mes,
+                        "Pendiente",
+                        formatear_fecha(p.fecha_generacion),
+                        "",
+                        formatear_cuota(p.cuota),
+                        "",
+                        ""
+                    ))
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     # ---------------------------------------------------------
     #   FILTROS
@@ -281,29 +286,31 @@ class PagoView:
         if not texto:
             return
 
-        id_cliente = int(texto.split(" ")[0])
+        try:
+            id_cliente = int(texto.split(" ")[0])
+            self.tree.delete(*self.tree.get_children())
 
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+            pagos = self.controller.obtener_pagos_por_cliente(id_cliente)
 
-        pagos = self.controller.obtener_pagos_por_cliente(id_cliente)
+            for p in pagos:
+                estado = "Pagado" if p.pagado else "Pendiente"
+                nombre = self.clientes_dict.get(id_cliente, "Desconocido")
 
-        for p in pagos:
-            estado = "Pagado" if p.pagado else "Pendiente"
-            nombre = self.clientes_dict[id_cliente]
+                self.tree.insert("", "end", values=(
+                    p.id_pago,
+                    p.id_cliente,
+                    nombre,
+                    p.mes,
+                    estado,
+                    formatear_fecha(p.fecha_generacion),
+                    formatear_fecha(p.fecha_pago),
+                    formatear_cuota(p.cuota),
+                    p.metodo_pago or "",
+                    p.concepto or ""
+                ))
 
-            self.tree.insert("", "end", values=(
-                p.id_pago,
-                p.id_cliente,
-                nombre,
-                p.mes,
-                estado,
-                formatear_fecha(p.fecha_generacion),
-                formatear_fecha(p.fecha_pago),
-                formatear_cuota(p.cuota),
-                p.metodo_pago or "",
-                p.concepto or ""
-            ))
+        except Exception as e:
+            messagebox.showerror("Error filtrando pagos", str(e))
 
     # ---------------------------------------------------------
     #   SELECCIÓN / ACCIONES
@@ -323,65 +330,61 @@ class PagoView:
             messagebox.showwarning("Advertencia", "Seleccione un pago.")
             return
 
-        # Obtener pago desde BD
-        pago_obj = self.controller.obtener_pago(self.id_pago_seleccionado)
+        try:
+            pago_obj = self.controller.obtener_pago(self.id_pago_seleccionado)
 
-        # ------------------------------
-        # VALIDACIÓN 1: ya está pagado
-        # ------------------------------
-        if pago_obj.pagado:
-            messagebox.showinfo(
-                "Pago ya registrado",
-                "Este pago ya está marcado como pagado."
-            )
-            return
-
-        # Crear diccionario con datos útiles
-        datos_pago = {
-            "id_pago": pago_obj.id_pago,
-            "cliente": self.clientes_dict.get(pago_obj.id_cliente, "Desconocido"),
-            "mes": pago_obj.mes,
-            "cuota": pago_obj.cuota
-        }
-
-        # ----------------------------------------------
-        # CALLBACK que recibe datos desde VentanaPago
-        # ----------------------------------------------
-        def callback_confirmacion(metodo, fecha, concepto):
-
-            # VALIDACIÓN 2 — Método de pago
-            if not metodo:
-                messagebox.showerror("Error", "Debe seleccionar un método de pago.")
+            if pago_obj.pagado:
+                messagebox.showinfo("Pago ya registrado", "Este pago ya está pagado.")
                 return
 
-            # VALIDACIÓN 3 — Fecha de pago
-            if not validar_fecha(fecha):
-                messagebox.showerror(
-                    "Fecha inválida",
-                    "La fecha debe tener formato YYYY-MM-DD."
-                )
-                return
+            datos_pago = {
+                "id_pago": pago_obj.id_pago,
+                "cliente": self.clientes_dict.get(pago_obj.id_cliente, "Desconocido"),
+                "mes": pago_obj.mes,
+                "cuota": pago_obj.cuota
+            }
 
-            # Todo OK → Registrar pago
-            self.controller.marcar_pago_como_pagado(
-                self.id_pago_seleccionado,
-                fecha,
-                metodo,
-                concepto
-            )
+            def callback_confirmacion(metodo, fecha, concepto):
 
-            messagebox.showinfo("Éxito", "Pago marcado como pagado correctamente.")
-            self.cargar_pagos()
+                if not metodo:
+                    messagebox.showerror("Error", "Debe seleccionar un método de pago.")
+                    return
 
-        # Abrir ventana de pago
-        VentanaPago(self.ventana, datos_pago, callback_confirmacion)
+                if not validar_fecha(fecha):
+                    messagebox.showerror("Fecha inválida", "Formato YYYY-MM-DD.")
+                    return
+
+                try:
+                    self.controller.marcar_pago_como_pagado(
+                        self.id_pago_seleccionado,
+                        fecha,
+                        metodo,
+                        concepto
+                    )
+                    messagebox.showinfo("Éxito", "Pago marcado correctamente.")
+                    self.cargar_pagos()
+
+                except Exception as e:
+                    messagebox.showerror("Error al registrar pago", str(e))
+
+            # CORRECCIÓN IMPORTANTE:
+            VentanaPago(self, datos_pago, callback_confirmacion)
+
+        except Exception as e:
+            messagebox.showerror("Error al cargar pago", str(e))
 
     def eliminar_pago(self):
         if not self.id_pago_seleccionado:
             messagebox.showwarning("Advertencia", "Seleccione un pago.")
             return
 
-        if messagebox.askyesno("Confirmar", "¿Eliminar pago?"):
+        if not messagebox.askyesno("Confirmar", "¿Eliminar pago?"):
+            return
+
+        try:
             self.controller.eliminar_pago(self.id_pago_seleccionado)
             self.cargar_pagos()
             self.id_pago_seleccionado = None
+
+        except Exception as e:
+            messagebox.showerror("Error eliminando pago", str(e))

@@ -12,13 +12,19 @@ from controller.aparato_controller import AparatoController
 from util.validaciones import validar_fecha, validar_hora
 
 
-class ReservaView:
-    """Clase para la ventana de gestión de reservas"""
+class ReservaView(tk.Frame):
+    """Vista de gestión de reservas (Frame)"""
 
-    def __init__(self, ventana):
-        self.ventana = ventana
-        self.ventana.title("Gestión de Reservas")
-        self.ventana.geometry("900x600")
+    def __init__(self, parent, main_window):
+        """
+        Inicializa la vista de reservas
+        
+        Args:
+            parent: Frame contenedor donde se dibuja
+            main_window: Referencia a MainWindow
+        """
+        super().__init__(parent, bg="#ecf0f1")
+        self.main_window = main_window
 
         self.controller = ReservaController()
         self.cliente_controller = ClienteController()
@@ -37,12 +43,12 @@ class ReservaView:
     #   INTERFAZ
     # ---------------------------------------------------------
     def configurar_interfaz(self):
-        titulo = tk.Label(self.ventana, text="Gestión de Reservas",
-                          font=("Arial", 18, "bold"), fg="#e74c3c")
+        titulo = tk.Label(self, text="Gestión de Reservas",
+                          font=("Arial", 18, "bold"), fg="#e74c3c", bg="#ecf0f1")
         titulo.pack(pady=20)
 
-        frame_form = tk.LabelFrame(self.ventana, text="Datos de la Reserva",
-                                   padx=20, pady=20)
+        frame_form = tk.LabelFrame(self, text="Datos de la Reserva",
+                                   padx=20, pady=20, bg="#ecf0f1")
         frame_form.pack(padx=20, pady=10, fill="x")
 
         tk.Label(frame_form, text="Cliente:").grid(row=0, column=0, sticky="w")
@@ -75,7 +81,7 @@ class ReservaView:
         self.combo_estado.grid(row=5, column=1, padx=10, pady=5)
         self.combo_estado.current(0)
 
-        frame_botones = tk.Frame(self.ventana)
+        frame_botones = tk.Frame(self, bg="#ecf0f1")
         frame_botones.pack(pady=10)
 
         tk.Button(frame_botones, text="Nueva", bg="#2ecc71", fg="white",
@@ -91,7 +97,7 @@ class ReservaView:
                   width=12, command=self.eliminar_reserva).grid(row=0, column=3, padx=5)
 
         # TABLA
-        frame_tabla = tk.Frame(self.ventana)
+        frame_tabla = tk.Frame(self, bg="#ecf0f1")
         frame_tabla.pack(padx=20, pady=10, fill="both", expand=True)
 
         scrollbar = tk.Scrollbar(frame_tabla)
