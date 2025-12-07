@@ -205,3 +205,15 @@ class GestorBD:
 
             self.insertar("Usuario", datos)
             print("[INFO] Usuario admin creado por defecto")
+
+    # ---------------------------------------------------------
+    #   INSERTO DATOS DE EJEMPLO A PARTIR DE SQL
+    # ---------------------------------------------------------
+    def ejecutar_sql_desde_archivo(self, ruta):
+        try:
+            with open(ruta, "r", encoding="utf-8") as f:
+                sql = f.read()
+            self.cursor.executescript(sql)
+            self.conexion.commit()
+        except Exception as e:
+            raise ErrorBaseDatos(f"Error ejecutando archivo SQL: {e}")

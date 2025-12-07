@@ -38,11 +38,38 @@ class MainWindow:
     #   BASE DE DATOS
     # ---------------------------------------------------------
     def inicializar_bd(self):
-        """Crea las tablas necesarias si no existen y captura errores."""
+        """Crea las tablas necesarias si no existen y carga datos iniciales."""
         try:
             gestor = GestorBD()
             gestor.conectar()
+
+            # Creamos las tablas si no existen
             gestor.crear_tablas()
+
+            # Comprobamos si la tabla Cliente está vacía
+            total_clientes = gestor.obtener_datos("SELECT COUNT(*) FROM Cliente")[0][0]
+
+            if total_clientes == 0:
+                # Ruta del archivo SQL que dejamos con datos iniciales
+                import os
+                ruta_sql = os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "data",
+                    "datos_iniciales.sql"
+                )
+                ruta_sql = os.path.abspath(ruta_sql)
+
+                # Método para ejecutar archivo SQL
+                try:
+                    with open(ruta_sql, "r", encoding="utf-8") as f:
+                        sql = f.read()
+                    gestor.cursor.executescript(sql)
+                    gestor.conexion.commit()
+                    print("[INFO] Datos iniciales insertados correctamente.")
+                except Exception as e:
+                    print(f"[ERROR] No se pudieron insertar datos iniciales: {e}")
+
             gestor.desconectar()
 
         except ErrorBaseDatos as e:
