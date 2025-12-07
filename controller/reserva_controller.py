@@ -5,6 +5,13 @@ Gestiona la lógica de negocio relacionada con las reservas del gimnasio.
 
 from data.gestor_bd import GestorBD
 from model.reserva import Reserva
+from util.validaciones import (
+    validar_fecha,
+    validar_hora,
+    validar_dia_laboral,
+    validar_duracion_30min
+)
+
 from excepciones import (
     DBConexionError,
     DBConsultaError,
@@ -12,6 +19,7 @@ from excepciones import (
     DBActualizacionError,
     DBEliminacionError
 )
+
 
 class ReservaController:
     """Controlador responsable de operar sobre las reservas."""
@@ -23,6 +31,37 @@ class ReservaController:
         self.db = GestorBD()
 
     # ---------------------------------------------------------
+    #   VALIDACIÓN CENTRALIZADA
+    # ---------------------------------------------------------
+    def validar_reserva(self, id_cliente, id_aparato, fecha, hora_inicio, hora_fin):
+        """
+        Centraliza todas las validaciones de la reserva.
+        Devuelve: (True, None) si todo ok
+                  (False, "mensaje de error") si algo falla
+        """
+
+        # Fecha válida
+        if not validar_fecha(fecha):
+            return False, "La fecha debe tener formato YYYY-MM-DD."
+
+        # Solo lunes a viernes
+        if not validar_dia_laboral(fecha):
+            return False, "Las reservas solo pueden hacerse de lunes a viernes."
+
+        # Horas válidas
+        if not validar_hora(hora_inicio):
+            return False, "Hora de inicio inválida."
+
+        if not validar_hora(hora_fin):
+            return False, "Hora de fin inválida."
+
+        # Duración 30 minutos EXACTOS
+        if not validar_duracion_30min(hora_inicio, hora_fin):
+            return False, "La reserva debe durar exactamente 30 minutos."
+
+        return True, None
+
+    # ---------------------------------------------------------
     #   CREAR RESERVA
     # ---------------------------------------------------------
     def crear_reserva(self, id_cliente, id_aparato, fecha_reserva,
@@ -32,7 +71,7 @@ class ReservaController:
         Devuelve el ID de la reserva o None si no se puede.
         """
 
-        # Comprobación interna básica
+        # Comprobación rápida de orden
         if hora_inicio >= hora_fin:
             return None
 
@@ -81,7 +120,7 @@ class ReservaController:
         return Reserva(*f)
 
     # ---------------------------------------------------------
-    #   OBTENER TODAS LAS RESERVAS
+    #   OBTENER TODAS LAS RESERVAS (MODELO PURO)
     # ---------------------------------------------------------
     def obtener_todas_reservas(self):
         try:
@@ -92,6 +131,57 @@ class ReservaController:
             raise DBConsultaError("Error al obtener todas las reservas") from e
 
         return [Reserva(*f) for f in filas]
+
+    # ---------------------------------------------------------
+    #   OBTENER RESERVAS CON NOMBRES (PARA LA VISTA)
+    # ---------------------------------------------------------
+    def obtener_reservas_con_nombres(self):
+        """
+        Devuelve una lista de diccionarios:
+        [
+           {
+             "id_reserva": ...,
+             "cliente": "Nombre Apellido",
+             "aparato": "Cinta de correr",
+             "fecha": ...,
+             "inicio": ...,
+             "fin": ...,
+             "estado": ...
+           }
+        ]
+        """
+        try:
+            self.db.conectar()
+            query = """
+                SELECT r.id_reserva,
+                       c.nombre || ' ' || c.apellidos AS cliente,
+                       a.nombre AS aparato,
+                       r.fecha_reserva,
+                       r.hora_inicio,
+                       r.hora_fin,
+                       r.estado
+                FROM Reserva r
+                JOIN Cliente c ON r.id_cliente = c.id_cliente
+                JOIN Aparato a ON r.id_aparato = a.id_aparato
+                ORDER BY r.id_reserva DESC
+            """
+            filas = self.db.obtener_datos(query)
+            self.db.desconectar()
+        except Exception as e:
+            raise DBConsultaError("Error al obtener las reservas con nombres") from e
+
+        lista = []
+        for f in filas:
+            lista.append({
+                "id_reserva": f[0],
+                "cliente": f[1],
+                "aparato": f[2],
+                "fecha": f[3],
+                "inicio": f[4],
+                "fin": f[5],
+                "estado": f[6]
+            })
+        return lista
 
     # ---------------------------------------------------------
     #   ACTUALIZAR RESERVA
@@ -118,7 +208,7 @@ class ReservaController:
             raise DBEliminacionError("Error al eliminar la reserva") from e
 
     # ---------------------------------------------------------
-    #   RESERVAS POR CLIENTE / APARATO / FECHA
+    #   RESERVAS FILTRADAS
     # ---------------------------------------------------------
     def obtener_reservas_por_cliente(self, id_cliente):
         try:
@@ -165,7 +255,6 @@ class ReservaController:
         Un intervalo solapa si:
                 inicio1 < fin2   Y   inicio2 < fin1
         """
-
         try:
             self.db.conectar()
             query = """
@@ -179,9 +268,48 @@ class ReservaController:
                     AND ? < hora_fin  -- inicio nueva
                 )
             """
-
             res = self.db.obtener_datos(query, (id_aparato, fecha, hora_fin, hora_inicio))
             self.db.desconectar()
             return res[0][0] == 0
         except Exception as e:
             raise DBConsultaError("Error al verificar disponibilidad del aparato") from e
+
+    # ---------------------------------------------------------
+    #   INFORME DE DISPONIBILIDAD
+    # ---------------------------------------------------------
+    def generar_informe_disponibilidad(self, fecha):
+        try:
+            self.db.conectar()
+
+            query_aparatos = "SELECT id_aparato, nombre FROM Aparato ORDER BY id_aparato"
+            aparatos = self.db.obtener_datos(query_aparatos)
+
+            informe = {}
+
+            for id_aparato, nombre_aparato in aparatos:
+                query_res = """
+                    SELECT r.hora_inicio, r.hora_fin, c.nombre, c.apellidos
+                    FROM Reserva r
+                    JOIN Cliente c ON r.id_cliente = c.id_cliente
+                    WHERE r.id_aparato = ?
+                    AND r.fecha_reserva = ?
+                    AND r.estado != 'cancelada'
+                    ORDER BY r.hora_inicio
+                """
+
+                filas = self.db.obtener_datos(query_res, (id_aparato, fecha))
+
+                lista = []
+                for h1, h2, nom, ape in filas:
+                    lista.append((h1, h2, f"{nom} {ape}"))
+
+                informe[id_aparato] = {
+                    "nombre": nombre_aparato,
+                    "reservas": lista
+                }
+
+            self.db.desconectar()
+            return informe
+
+        except Exception as e:
+            raise DBConsultaError(f"Error al generar informe de disponibilidad: {e}") from e

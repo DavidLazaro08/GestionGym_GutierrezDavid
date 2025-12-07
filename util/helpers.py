@@ -3,7 +3,7 @@ Helpers del sistema
 Funciones auxiliares
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def formatear_fecha(fecha):
@@ -18,11 +18,11 @@ def formatear_fecha(fecha):
         fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
         return fecha_obj.strftime('%d/%m/%Y')
     except (ValueError, TypeError):
-        return fecha
+        return str(fecha)
 
 
 def obtener_fecha_actual():
-    """Devuelve la fecha de hoy en formato 'YYYY-MM-DD'."""
+    """Devuelve la fecha actual en formato 'YYYY-MM-DD'."""
     return datetime.now().strftime('%Y-%m-%d')
 
 
@@ -33,16 +33,15 @@ def obtener_hora_actual():
 
 def calcular_duracion(hora_inicio, hora_fin):
     """
-    Calcula duración en minutos entre dos horas 'HH:MM'.
-    Si hay error o el fin es anterior al inicio, devuelve 0.
+    Calcula la duración en minutos entre dos horas.
+    Devuelve None si hay error.
     """
     try:
         inicio = datetime.strptime(hora_inicio, '%H:%M')
         fin = datetime.strptime(hora_fin, '%H:%M')
-        duracion = (fin - inicio).total_seconds() / 60
-        return max(0, int(duracion))
+        return int((fin - inicio).total_seconds() / 60)
     except (ValueError, TypeError):
-        return 0
+        return None
 
 
 def formatear_cuota(cuota):
@@ -54,3 +53,19 @@ def formatear_cuota(cuota):
         return f"€{float(cuota):.2f}"
     except (ValueError, TypeError):
         return "€0.00"
+
+
+def calcular_hora_fin(hora_inicio):
+    """
+    Calcula la hora de fin sumando 30 minutos a la hora de inicio.
+    Formato: HH:MM
+    """
+    if not hora_inicio:
+        return ""
+    
+    try:
+        inicio = datetime.strptime(hora_inicio, '%H:%M')
+        fin = inicio + timedelta(minutes=30)
+        return fin.strftime('%H:%M')
+    except (ValueError, TypeError):
+        return ""

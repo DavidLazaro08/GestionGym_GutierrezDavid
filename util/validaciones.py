@@ -71,3 +71,38 @@ def validar_cuota(cuota):
         return valor > 0
     except (ValueError, TypeError):
         return False
+
+
+def validar_dia_laboral(fecha):
+    """
+    Valida que la fecha sea de lunes a viernes.
+    Formato esperado: YYYY-MM-DD
+    """
+    if not fecha:
+        return False
+    
+    try:
+        from datetime import datetime
+        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
+        dia_semana = fecha_obj.weekday()  # 0=lunes, 6=domingo
+        return dia_semana < 5  # lunes a viernes
+    except ValueError:
+        return False
+
+
+def validar_duracion_30min(hora_inicio, hora_fin):
+    """
+    Valida que la duración entre dos horas sea exactamente 30 minutos.
+    Formato esperado: HH:MM
+    """
+    if not hora_inicio or not hora_fin:
+        return False
+    
+    try:
+        from datetime import datetime
+        inicio = datetime.strptime(hora_inicio, '%H:%M')
+        fin = datetime.strptime(hora_fin, '%H:%M')
+        duracion = (fin - inicio).total_seconds() / 60
+        return duracion == 30
+    except ValueError:
+        return False
