@@ -1,0 +1,11 @@
+# GymForTheMoment - Dependencias del proyecto
+
+# Base de datos
+# SQLite viene incluido con Python, no requiere instalación adicional
+
+# Interfaz gráfica
+# Tkinter viene incluido con Python, no requiere instalación adicional
+
+# Utilidades adicionales (si se necesitan en el futuro)
+# pillow>=10.0.0  # Para manejo de imágenes
+# reportlab>=4.0.0  # Para generación de reportes PDF
