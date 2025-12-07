@@ -129,16 +129,21 @@ class ReservaView(tk.Frame):
         frame_tabla = tk.Frame(self, bg="#ecf0f1")
         frame_tabla.pack(padx=20, pady=10, fill="both", expand=True)
 
-        scrollbar = tk.Scrollbar(frame_tabla)
-        scrollbar.pack(side="right", fill="y")
+        scrollbar_y = tk.Scrollbar(frame_tabla, orient="vertical")
+        scrollbar_y.pack(side="right", fill="y")
+
+        scrollbar_x = tk.Scrollbar(frame_tabla, orient="horizontal")
+        scrollbar_x.pack(side="bottom", fill="x")
 
         self.tree = ttk.Treeview(
             frame_tabla,
             columns=("ID", "Cliente", "Aparato", "Fecha", "Inicio", "Fin", "Estado"),
             show="headings",
-            yscrollcommand=scrollbar.set
+            yscrollcommand=scrollbar_y.set,
+            xscrollcommand=scrollbar_x.set
         )
-        scrollbar.config(command=self.tree.yview)
+        scrollbar_y.config(command=self.tree.yview)
+        scrollbar_x.config(command=self.tree.xview)
 
         for col in ("ID", "Cliente", "Aparato", "Fecha", "Inicio", "Fin", "Estado"):
             self.tree.heading(col, text=col)
