@@ -68,10 +68,12 @@ ANCHO_SIDEBAR = 220
 
 import os
 
-# Obtener ruta base del proyecto
+# Obtener ruta base del proyecto (desde resources/style/ subimos 2 niveles)
 RUTA_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RUTA_RECURSOS = os.path.join(RUTA_BASE, "resources")
-RUTA_IMG = os.path.join(RUTA_RECURSOS, "img")
+# RUTA_BASE ahora apunta a: .../GestionGym_GutierrezDavid/resources/
+# Necesitamos subir un nivel más para llegar a la raíz del proyecto
+RUTA_PROYECTO = os.path.dirname(RUTA_BASE)
+RUTA_IMG = os.path.join(RUTA_BASE, "img")
 
 # Logos
 LOGO_ICONO = os.path.join(RUTA_IMG, "GF.png")              # Solo icono
