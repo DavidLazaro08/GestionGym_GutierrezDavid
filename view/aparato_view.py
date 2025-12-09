@@ -1,301 +1,166 @@
 """
-Vista de Aparatos
-Interfaz para gestionar aparatos del gimnasio.
+Vista de Aparatos (Rediseño Dark Neon)
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 from controller.aparato_controller import AparatoController
-
+from resources.style.colores import *
 
 class AparatoView(tk.Frame):
-    """Vista de gestión de aparatos (Frame)."""
-
-    # ---------------------------------------------------------
-    #   CONSTRUCTOR
-    # ---------------------------------------------------------
     def __init__(self, parent, main_window):
-        """Inicializa la vista de aparatos dentro del panel principal."""
-        super().__init__(parent, bg="#ecf0f1")
+        super().__init__(parent, bg=COLOR_FONDO)
         self.main_window = main_window
-
         self.controller = AparatoController()
         self.id_aparato_seleccionado = None
+        
+        self._configurar_estilos_treeview()
+        self._configurar_interfaz()
+        self._cargar_aparatos()
 
-        self.configurar_interfaz()
-        self.cargar_aparatos()
-
-    # ---------------------------------------------------------
-    #   INTERFAZ
-    # ---------------------------------------------------------
-    def configurar_interfaz(self):
-        """Configura todos los elementos gráficos de la vista."""
-
-        titulo = tk.Label(
-            self,
-            text="Gestión de Aparatos",
-            font=("Arial", 18, "bold"),
-            fg="#2ecc71",
-            bg="#ecf0f1"
+    def _configurar_estilos_treeview(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure(
+            "Treeview",
+            background="#161b22",
+            foreground="white",
+            fieldbackground="#161b22",
+            borderwidth=0,
+            font=("Segoe UI", 10),
+            rowheight=30
         )
-        titulo.pack(pady=20)
-
-        # -------- FORMULARIO --------
-        frame_form = tk.LabelFrame(
-            self,
-            text="Datos del Aparato",
-            padx=20,
-            pady=20,
-            bg="#ecf0f1"
+        style.configure(
+            "Treeview.Heading",
+            background="#0d1117",
+            foreground=COLOR_SECUNDARIO,
+            relief="flat",
+            font=("Segoe UI", 10, "bold")
         )
-        frame_form.pack(padx=20, pady=10, fill="x")
+        style.map("Treeview.Heading", background=[("active", "#161b22")])
+        style.map("Treeview", background=[("selected", COLOR_SECUNDARIO)], foreground=[("selected", "#000000")])
 
-        # NOMBRE
-        tk.Label(frame_form, text="Nombre:").grid(row=0, column=0, sticky="w", pady=5)
-        self.entry_nombre = tk.Entry(frame_form, width=40)
-        self.entry_nombre.grid(row=0, column=1, pady=5, padx=10)
+    def _configurar_interfaz(self):
+        # Header
+        header = tk.Frame(self, bg=COLOR_FONDO)
+        header.pack(fill="x", pady=(0, 20))
+        tk.Label(header, text="Gestión de Aparatos", font=FUENTE_TITULO, bg=COLOR_FONDO, fg="white").pack(anchor="w")
+        tk.Label(header, text="Control de inventario y estado de máquinas", font=("Segoe UI", 11), bg=COLOR_FONDO, fg=COLOR_TEXTO_SECUNDARIO).pack(anchor="w")
 
-        # TIPO
-        tk.Label(frame_form, text="Tipo:").grid(row=1, column=0, sticky="w", pady=5)
-        self.combo_tipo = ttk.Combobox(
-            frame_form,
-            values=["Cardio", "Fuerza", "Flexibilidad", "Funcional", "Otro"],
-            width=37,
-            state="readonly"
-        )
-        self.combo_tipo.grid(row=1, column=1, pady=5, padx=10)
-        self.combo_tipo.current(0)
+        # Card
+        card = tk.Frame(self, bg=COLOR_FONDO_CARD)
+        card.pack(fill="both", expand=True)
 
-        # ESTADO
-        tk.Label(frame_form, text="Estado:").grid(row=2, column=0, sticky="w", pady=5)
-        self.combo_estado = ttk.Combobox(
-            frame_form,
-            values=["disponible", "en_uso", "mantenimiento"],
-            width=37,
-            state="readonly"
-        )
-        self.combo_estado.grid(row=2, column=1, pady=5, padx=10)
-        self.combo_estado.current(0)
+        # Formulario
+        form = tk.Frame(card, bg=COLOR_FONDO_CARD)
+        form.pack(fill="x", padx=30, pady=30)
+        
+        # Inputs
+        self.entry_nombre = self._crear_input_moderno(form, "Nombre del Aparato", 0, 0)
+        
+        # Combos
+        self.combo_tipo = self._crear_combo_moderno(form, "Tipo", ["Cardio", "Fuerza", "Flexibilidad", "Funcional", "Otro"], 0, 1)
+        self.combo_estado = self._crear_combo_moderno(form, "Estado", ["disponible", "en_uso", "mantenimiento"], 1, 0)
 
-        # DESCRIPCIÓN
-        tk.Label(frame_form, text="Descripción:").grid(row=3, column=0, sticky="w", pady=5)
-        self.text_descripcion = tk.Text(frame_form, width=40, height=3)
-        self.text_descripcion.grid(row=3, column=1, pady=5, padx=10)
+        # Descripción
+        desc_frame = tk.Frame(form, bg=COLOR_FONDO_CARD)
+        desc_frame.grid(row=1, column=1, padx=20, pady=10, sticky="ew")
+        tk.Label(desc_frame, text="DESCRIPCIÓN", font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
+        self.text_descripcion = tk.Text(desc_frame, height=3, bg=COLOR_INPUT_BG, fg="white", bd=0, font=FUENTE_NORMAL)
+        self.text_descripcion.pack(fill="x")
 
-        # -------- BOTONES --------
-        frame_botones = tk.Frame(self, bg="#ecf0f1")
-        frame_botones.pack(pady=10)
+        # Botones
+        btns = tk.Frame(card, bg=COLOR_FONDO_CARD)
+        btns.pack(fill="x", padx=30, pady=(0, 20))
+        self._crear_boton(btns, "NUEVO", self.nuevo_aparato, ESTILO_BOTON_SECUNDARIO).pack(side="left", padx=(0, 10))
+        self._crear_boton(btns, "GUARDAR", self.guardar_aparato, ESTILO_BOTON_EXITO).pack(side="left", padx=(0, 10))
+        self._crear_boton(btns, "MODIFICAR", self.modificar_aparato, ESTILO_BOTON_ADVERTENCIA).pack(side="left", padx=(0, 10))
+        self._crear_boton(btns, "ELIMINAR", self.eliminar_aparato, ESTILO_BOTON_PELIGRO).pack(side="left")
 
-        tk.Button(
-            frame_botones,
-            text="Nuevo",
-            command=self.nuevo_aparato,
-            bg="#2ecc71",
-            fg="white",
-            width=12
-        ).grid(row=0, column=0, padx=5)
-
-        tk.Button(
-            frame_botones,
-            text="Guardar",
-            command=self.guardar_aparato,
-            bg="#3498db",
-            fg="white",
-            width=12
-        ).grid(row=0, column=1, padx=5)
-
-        tk.Button(
-            frame_botones,
-            text="Modificar",
-            command=self.modificar_aparato,
-            bg="#f39c12",
-            fg="white",
-            width=12
-        ).grid(row=0, column=2, padx=5)
-
-        tk.Button(
-            frame_botones,
-            text="Eliminar",
-            command=self.eliminar_aparato,
-            bg="#e74c3c",
-            fg="white",
-            width=12
-        ).grid(row=0, column=3, padx=5)
-
-        # -------- TABLA --------
-        frame_tabla = tk.Frame(self, bg="#ecf0f1")
-        frame_tabla.pack(padx=20, pady=10, fill="both", expand=True)
-
-        scrollbar_y = tk.Scrollbar(frame_tabla, orient="vertical")
-        scrollbar_y.pack(side="right", fill="y")
-
-        scrollbar_x = tk.Scrollbar(frame_tabla, orient="horizontal")
-        scrollbar_x.pack(side="bottom", fill="x")
-
-        self.tree = ttk.Treeview(
-            frame_tabla,
-            columns=("ID", "Nombre", "Tipo", "Estado", "Descripción"),
-            show="headings",
-            yscrollcommand=scrollbar_y.set,
-            xscrollcommand=scrollbar_x.set
-        )
+        # Tabla
+        table_frame = tk.Frame(card, bg=COLOR_FONDO_CARD)
+        table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        
+        scrollbar_y = tk.Scrollbar(table_frame); scrollbar_y.pack(side="right", fill="y")
+        self.tree = ttk.Treeview(table_frame, columns=("ID", "Nombre", "Tipo", "Estado", "Descripción"), show="headings", yscrollcommand=scrollbar_y.set)
         scrollbar_y.config(command=self.tree.yview)
-        scrollbar_x.config(command=self.tree.xview)
-
-        # Cabeceras
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("Nombre", text="Nombre")
-        self.tree.heading("Tipo", text="Tipo")
-        self.tree.heading("Estado", text="Estado")
-        self.tree.heading("Descripción", text="Descripción")
-
-        # Tamaño columnas
-        self.tree.column("ID", width=50)
-        self.tree.column("Nombre", width=200)
-        self.tree.column("Tipo", width=120)
-        self.tree.column("Estado", width=120)
-        self.tree.column("Descripción", width=250)
-
+        
+        for col in ("ID", "Nombre", "Tipo", "Estado", "Descripción"):
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=100 if col != "Descripción" else 250)
+            
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_aparato)
 
+    def _crear_input_moderno(self, parent, label, row, col):
+        frame = tk.Frame(parent, bg=COLOR_FONDO_CARD)
+        frame.grid(row=row, column=col, padx=20, pady=10, sticky="ew")
+        parent.grid_columnconfigure(col, weight=1)
+        tk.Label(frame, text=label.upper(), font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
+        border = tk.Frame(frame, bg=COLOR_INPUT_BORDER, padx=1, pady=1); border.pack(fill="x")
+        entry = tk.Entry(border, bg=COLOR_INPUT_BG, fg="white", insertbackground=COLOR_SECUNDARIO, font=FUENTE_NORMAL, relief="flat", bd=5)
+        entry.pack(fill="x")
+        def on_in(e): border.config(bg=COLOR_SECUNDARIO)
+        def on_out(e): border.config(bg=COLOR_INPUT_BORDER)
+        entry.bind("<FocusIn>", on_in); entry.bind("<FocusOut>", on_out)
+        return entry
+
+    def _crear_combo_moderno(self, parent, label, values, row, col):
+        frame = tk.Frame(parent, bg=COLOR_FONDO_CARD)
+        frame.grid(row=row, column=col, padx=20, pady=10, sticky="ew")
+        parent.grid_columnconfigure(col, weight=1)
+        tk.Label(frame, text=label.upper(), font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
+        combo = ttk.Combobox(frame, values=values, state="readonly", font=FUENTE_NORMAL)
+        combo.pack(fill="x", ipady=4)
+        combo.current(0)
+        return combo
+
+    def _crear_boton(self, parent, text, cmd, style):
+        return tk.Button(parent, text=text, command=cmd, **style)
+
     # ---------------------------------------------------------
-    #   ACCIONES
+    #   LOGICA
     # ---------------------------------------------------------
     def nuevo_aparato(self):
-        """Limpia el formulario para crear un aparato nuevo."""
         self.limpiar_formulario()
-        self.id_aparato_seleccionado = None
 
     def guardar_aparato(self):
-        """Guarda un aparato nuevo en la base de datos."""
         nombre = self.entry_nombre.get().strip()
-        tipo = self.combo_tipo.get()
-        estado = self.combo_estado.get()
-        descripcion = self.text_descripcion.get("1.0", tk.END).strip()
-
-        if not nombre or not tipo:
-            messagebox.showwarning(
-                "Advertencia",
-                "Nombre y tipo son obligatorios."
-            )
-            return
-
-        nuevo_id = self.controller.crear_aparato(
-            nombre,
-            tipo,
-            descripcion,
-            estado
-        )
-
-        if nuevo_id:
-            messagebox.showinfo("Éxito", "Aparato guardado correctamente.")
-            self.limpiar_formulario()
-            self.cargar_aparatos()
-        else:
-            messagebox.showerror("Error", "No se pudo guardar el aparato.")
+        if not nombre: return
+        self.controller.crear_aparato(nombre, self.combo_tipo.get(), self.text_descripcion.get("1.0", tk.END).strip(), self.combo_estado.get())
+        self.limpiar_formulario()
+        self._cargar_aparatos()
 
     def modificar_aparato(self):
-        """Modifica el aparato seleccionado."""
-        if not self.id_aparato_seleccionado:
-            messagebox.showwarning(
-                "Advertencia",
-                "Debe seleccionar un aparato."
-            )
-            return
-
-        nombre = self.entry_nombre.get().strip()
-        tipo = self.combo_tipo.get()
-        estado = self.combo_estado.get()
-        descripcion = self.text_descripcion.get("1.0", tk.END).strip()
-
-        if not nombre or not tipo:
-            messagebox.showwarning(
-                "Advertencia",
-                "Nombre y tipo son obligatorios."
-            )
-            return
-
-        ok = self.controller.actualizar_aparato(
-            self.id_aparato_seleccionado,
-            nombre=nombre,
-            tipo=tipo,
-            estado=estado,
-            descripcion=descripcion
-        )
-
-        if ok:
-            messagebox.showinfo("Éxito", "Aparato modificado correctamente.")
-            self.limpiar_formulario()
-            self.cargar_aparatos()
-        else:
-            messagebox.showerror("Error", "No se pudo modificar el aparato.")
+        if not self.id_aparato_seleccionado: return
+        self.controller.actualizar_aparato(self.id_aparato_seleccionado, nombre=self.entry_nombre.get(), tipo=self.combo_tipo.get(), estado=self.combo_estado.get(), descripcion=self.text_descripcion.get("1.0", tk.END).strip())
+        self._cargar_aparatos()
 
     def eliminar_aparato(self):
-        """Elimina el aparato seleccionado."""
-        if not self.id_aparato_seleccionado:
-            messagebox.showwarning(
-                "Advertencia",
-                "Seleccione un aparato."
-            )
-            return
+        if not self.id_aparato_seleccionado: return
+        if messagebox.askyesno("Confirmar", "¿Eliminar?"):
+            self.controller.eliminar_aparato(self.id_aparato_seleccionado)
+            self.limpiar_formulario()
+            self._cargar_aparatos()
 
-        if messagebox.askyesno("Confirmar", "¿Eliminar este aparato?"):
-            ok = self.controller.eliminar_aparato(self.id_aparato_seleccionado)
-
-            if ok:
-                messagebox.showinfo("Éxito", "Aparato eliminado.")
-                self.limpiar_formulario()
-                self.cargar_aparatos()
-            else:
-                messagebox.showerror("Error", "No se pudo eliminar el aparato.")
-
-    # ---------------------------------------------------------
-    #   TABLA Y FORMULARIO
-    # ---------------------------------------------------------
-    def cargar_aparatos(self):
-        """Carga o recarga el listado de aparatos en la tabla."""
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        aparatos = self.controller.obtener_todos_aparatos()
-
-        for aparato in aparatos:
-            self.tree.insert(
-                "",
-                "end",
-                values=(
-                    aparato.id_aparato,
-                    aparato.nombre,
-                    aparato.tipo,
-                    aparato.estado,
-                    aparato.descripcion
-                )
-            )
+    def _cargar_aparatos(self):
+        for item in self.tree.get_children(): self.tree.delete(item)
+        for a in self.controller.obtener_todos_aparatos():
+            self.tree.insert("", "end", values=(a.id_aparato, a.nombre, a.tipo, a.estado, a.descripcion))
 
     def seleccionar_aparato(self, event):
-        """Carga los datos del aparato seleccionado en el formulario."""
-        seleccion = self.tree.selection()
-        if not seleccion:
-            return
-
-        fila = self.tree.item(seleccion[0])["values"]
-
-        self.id_aparato_seleccionado = fila[0]
-
-        self.entry_nombre.delete(0, tk.END)
-        self.entry_nombre.insert(0, fila[1])
-
-        self.combo_tipo.set(fila[2])
-        self.combo_estado.set(fila[3])
-
-        self.text_descripcion.delete("1.0", tk.END)
-        self.text_descripcion.insert("1.0", fila[4])
+        sel = self.tree.selection()
+        if not sel: return
+        vals = self.tree.item(sel[0])["values"]
+        self.id_aparato_seleccionado = vals[0]
+        self.entry_nombre.delete(0, tk.END); self.entry_nombre.insert(0, vals[1])
+        self.combo_tipo.set(vals[2])
+        self.combo_estado.set(vals[3])
+        self.text_descripcion.delete("1.0", tk.END); self.text_descripcion.insert("1.0", vals[4])
 
     def limpiar_formulario(self):
-        """Vacía todos los campos del formulario."""
+        self.id_aparato_seleccionado = None
         self.entry_nombre.delete(0, tk.END)
         self.combo_tipo.current(0)
         self.combo_estado.current(0)
         self.text_descripcion.delete("1.0", tk.END)
-        self.id_aparato_seleccionado = None
