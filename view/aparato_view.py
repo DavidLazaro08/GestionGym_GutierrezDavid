@@ -34,6 +34,7 @@ class AparatoView(tk.Frame):
         style = ttk.Style()
         style.theme_use("clam")
         
+        # --- ESTILO TABLA ---
         style.configure(
             "Treeview",
             background=R_COLOR_TABLA_BG,
@@ -54,6 +55,26 @@ class AparatoView(tk.Frame):
         
         style.map("Treeview.Heading", background=[("active", R_COLOR_TABLA_HEAD)])
         style.map("Treeview", background=[("selected", "#00d4aa")], foreground=[("selected", "black")])
+
+        # --- ESTILO SCROLLBAR (Dark Neon) ---
+        style.configure(
+            "Vertical.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.configure(
+            "Horizontal.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.map("Vertical.TScrollbar", background=[("active", "#00d4aa")])
+        style.map("Horizontal.TScrollbar", background=[("active", "#00d4aa")])
 
     def _configurar_interfaz(self):
         # Header
@@ -120,16 +141,24 @@ class AparatoView(tk.Frame):
         table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
         table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
         
-        scrollbar_y = tk.Scrollbar(table_frame); scrollbar_y.pack(side="right", fill="y")
+        scrollbar_y = ttk.Scrollbar(table_frame, orient="vertical")
+        scrollbar_y.pack(side="right", fill="y")
         
-        self.tree = ttk.Treeview(table_frame, columns=("ID", "Nombre", "Tipo", "Estado", "Descripción"), show="headings", yscrollcommand=scrollbar_y.set)
+        scrollbar_x = ttk.Scrollbar(table_frame, orient="horizontal")
+        scrollbar_x.pack(side="bottom", fill="x")
+        
+        self.tree = ttk.Treeview(table_frame, columns=("ID", "Nombre", "Tipo", "Estado", "Descripción"), show="headings", yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
         scrollbar_y.config(command=self.tree.yview)
+        scrollbar_x.config(command=self.tree.xview)
         
         for col in ("ID", "Nombre", "Tipo", "Estado", "Descripción"):
             self.tree.heading(col, text=col)
-            width = 80 if col != "Descripción" else 200
-            if col == "ID": width = 50
-            self.tree.column(col, width=width)
+            # ANCHOS AMPLIADOS PARA FORZAR SCROLL
+            width = 150 # default más ancho
+            if col == "Descripción": width = 600
+            elif col == "ID": width = 60
+            
+            self.tree.column(col, width=width, minwidth=100)
             
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_aparato)

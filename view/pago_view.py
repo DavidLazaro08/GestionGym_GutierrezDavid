@@ -75,6 +75,26 @@ class PagoView(tk.Frame):
             foreground=[("selected", "black")],
         )
 
+        # --- ESTILO SCROLLBAR ---
+        style.configure(
+            "Vertical.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.configure(
+            "Horizontal.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.map("Vertical.TScrollbar", background=[("active", "#00d4aa")])
+        style.map("Horizontal.TScrollbar", background=[("active", "#00d4aa")])
+
     # --------- INTERFAZ ---------
     def _configurar_interfaz(self):
         # Cabecera
@@ -209,8 +229,11 @@ class PagoView(tk.Frame):
         table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
         table_frame.pack(fill="both", expand=True, padx=20, pady=(10, 20))
 
-        scrollbar_y = tk.Scrollbar(table_frame)
+        scrollbar_y = ttk.Scrollbar(table_frame, orient="vertical")
         scrollbar_y.pack(side="right", fill="y")
+
+        scrollbar_x = ttk.Scrollbar(table_frame, orient="horizontal")
+        scrollbar_x.pack(side="bottom", fill="x")
 
         columnas = ("ID", "Cliente", "Mes", "Estado", "Cuota", "F. Pago", "Método")
 
@@ -219,14 +242,17 @@ class PagoView(tk.Frame):
             columns=columnas,
             show="headings",
             yscrollcommand=scrollbar_y.set,
+            xscrollcommand=scrollbar_x.set
         )
         scrollbar_y.config(command=self.tree.yview)
+        scrollbar_x.config(command=self.tree.xview)
 
         for col in columnas:
             self.tree.heading(col, text=col)
-            width = 50 if col == "ID" else 100
-            if col == "Cliente":
-                width = 180
+            width = 120 # aumentamos base
+            if col == "ID": width = 60
+            if col == "Cliente": width = 250
+            if col == "Método": width = 150
             self.tree.column(col, width=width)
 
         self.tree.pack(fill="both", expand=True)

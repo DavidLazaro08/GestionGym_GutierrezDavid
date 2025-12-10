@@ -49,6 +49,9 @@ class ReservaView(tk.Frame):
     # ---------------------------------------------------------
     #   ESTILOS DE TABLA
     # ---------------------------------------------------------
+    # ---------------------------------------------------------
+    #   ESTILOS DE TABLA
+    # ---------------------------------------------------------
     def _configurar_estilos_treeview(self):
         style = ttk.Style()
         style.theme_use("clam")
@@ -73,6 +76,26 @@ class ReservaView(tk.Frame):
 
         style.map("Treeview", background=[("selected", "#00d4aa")],
                   foreground=[("selected", "black")])
+
+        # --- ESTILO SCROLLBAR ---
+        style.configure(
+            "Vertical.TScrollbar",
+            background=COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.configure(
+            "Horizontal.TScrollbar",
+            background=COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.map("Vertical.TScrollbar", background=[("active", "#00d4aa")])
+        style.map("Horizontal.TScrollbar", background=[("active", "#00d4aa")])
 
     # ---------------------------------------------------------
     #   INTERFAZ PRINCIPAL
@@ -166,22 +189,29 @@ class ReservaView(tk.Frame):
         table_frame = tk.Frame(card, bg=COLOR_PANEL)
         table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        scrollbar_y = tk.Scrollbar(table_frame)
+        scrollbar_y = ttk.Scrollbar(table_frame, orient="vertical")
         scrollbar_y.pack(side="right", fill="y")
+
+        scrollbar_x = ttk.Scrollbar(table_frame, orient="horizontal")
+        scrollbar_x.pack(side="bottom", fill="x")
 
         cols = ("ID", "Cliente", "Aparato", "Fecha", "Inicio", "Fin", "Estado")
 
         self.tree = ttk.Treeview(
             table_frame, columns=cols, show="headings",
-            yscrollcommand=scrollbar_y.set
+            yscrollcommand=scrollbar_y.set,
+            xscrollcommand=scrollbar_x.set
         )
         scrollbar_y.config(command=self.tree.yview)
+        scrollbar_x.config(command=self.tree.xview)
 
         for col in cols:
             self.tree.heading(col, text=col)
-            w = 50 if col == "ID" else 120
+            # Anchos ampliados
+            w = 140
+            if col == "ID": w = 60
             if col in ("Cliente", "Aparato"):
-                w = 160
+                w = 220
             self.tree.column(col, width=w)
 
         self.tree.pack(fill="both", expand=True)
