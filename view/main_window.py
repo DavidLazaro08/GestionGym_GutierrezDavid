@@ -102,6 +102,8 @@ class MainWindow:
         # ---------------------------------------------------------
         # BOTÓN CERRAR SESIÓN NUEVO (UNIFICADO)
         # ---------------------------------------------------------
+        hover_bg = COLOR_SIDEBAR_HOVER
+        
         btn_logout = tk.Button(
             frame_menu,
             text="⏻  Cerrar Sesión",
@@ -112,14 +114,16 @@ class MainWindow:
             relief="flat",
             cursor="hand2",
             anchor="w",
-            padx=15,
+            padx=20, # Consistent padding
             pady=12,
-            bd=0
+            bd=0,
+            activebackground=hover_bg,
+            activeforeground="#ff8a8a"
         )
         btn_logout.pack(side="bottom", fill="x", pady=20)
 
         def on_logout_enter(e):
-            btn_logout.config(bg="#0d141c", fg="#ff8a8a")
+            btn_logout.config(bg=hover_bg, fg="#ff8a8a")
 
         def on_logout_leave(e):
             btn_logout.config(bg=COLOR_SIDEBAR_BG, fg="#d16d6d")
@@ -137,12 +141,16 @@ class MainWindow:
     # BOTÓN MENÚ (FINAL ELEGANTE)
     # ---------------------------------------------------------
     def _crear_boton_menu(self, texto, comando, color_strip):
+        # Base colors
         base_bg = COLOR_SIDEBAR_BG
-
+        hover_bg = COLOR_SIDEBAR_HOVER # "#1f2937" from palette
+        text_normal = "#dfe6e9"
+        
+        # Contenedor principal del botón
         container = tk.Frame(self.contenedor_botones, bg=base_bg)
-        container.pack(fill="x", pady=4)
+        container.pack(fill="x", pady=2) # Reduced padding for tighter look
 
-        # Franja lateral
+        # Franja lateral (Color Strip)
         strip = tk.Frame(container, bg=color_strip, width=4)
         strip.pack(side="left", fill="y")
 
@@ -151,31 +159,42 @@ class MainWindow:
             container,
             text=texto,
             command=comando,
-            font=("Segoe UI", 11, "bold"),
+            font=("Segoe UI", 11), # Slightly lighter weight for elegance? Or keep bold if preferred. User had bold.
             bg=base_bg,
-            fg="#dfe6e9",
+            fg=text_normal,
             relief="flat",
             cursor="hand2",
             anchor="w",
-            padx=15,
+            padx=20, # More padding left
             pady=12,
             bd=0,
+            activebackground=hover_bg,
+            activeforeground=color_strip
         )
         btn.pack(side="left", fill="both", expand=True)
 
-        # Hover discreto
-        hover_bg = "#0d141c"
-
+        # Lógica de Hover suavizada
         def on_enter(e):
+            # Cambio de fondo
             container.config(bg=hover_bg)
             btn.config(bg=hover_bg)
+            # El texto toma el color de la franja (Efecto Neon sutil)
+            btn.config(fg=color_strip)
 
         def on_leave(e):
+            # Restaurar fondo base
             container.config(bg=base_bg)
             btn.config(bg=base_bg)
+            # Restaurar texto
+            btn.config(fg=text_normal)
 
+        # Bind events to both button and container for smooth experience
         btn.bind("<Enter>", on_enter)
         btn.bind("<Leave>", on_leave)
+        
+        # Optional: Bind strip too in case mouse hits the 4px strip
+        strip.bind("<Enter>", on_enter)
+        strip.bind("<Leave>", on_leave)
 
     # ---------------------------------------------------------
     # CAMBIO DE VISTAS
