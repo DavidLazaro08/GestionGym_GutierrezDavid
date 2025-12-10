@@ -1,11 +1,23 @@
 """
-Vista de Aparatos (Rediseño Dark Neon)
+Vista de Aparatos (Rediseño Matrix/Neon)
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 from controller.aparato_controller import AparatoController
 from resources.style.colores import *
+
+# --- ESTILOS MATRIX / NEON REFINADOS ---
+R_COLOR_PANEL = "#151C25"
+R_COLOR_BORDE_PANEL = "#00d4aa"  # Turquesa
+R_COLOR_INPUT_BG = "#0F1620"
+R_COLOR_INPUT_TEXT = "#E4E8EC"
+R_COLOR_BTN_NUEVO = "#00d4aa"    # Turquesa
+R_COLOR_BTN_GUARDAR = "#2ecc71"  # Verde
+R_COLOR_BTN_MODIFICAR = "#f39c12" # Naranja
+R_COLOR_BTN_ELIMINAR = "#e74c3c" # Rojo
+R_COLOR_TABLA_BG = "#10171E"
+R_COLOR_TABLA_HEAD = "#1D2630"
 
 class AparatoView(tk.Frame):
     def __init__(self, parent, main_window):
@@ -21,105 +33,163 @@ class AparatoView(tk.Frame):
     def _configurar_estilos_treeview(self):
         style = ttk.Style()
         style.theme_use("clam")
+        
         style.configure(
             "Treeview",
-            background="#161b22",
+            background=R_COLOR_TABLA_BG,
             foreground="white",
-            fieldbackground="#161b22",
+            fieldbackground=R_COLOR_TABLA_BG,
             borderwidth=0,
             font=("Segoe UI", 10),
-            rowheight=30
+            rowheight=25
         )
+        
         style.configure(
             "Treeview.Heading",
-            background="#0d1117",
-            foreground=COLOR_SECUNDARIO,
+            background=R_COLOR_TABLA_HEAD,
+            foreground="white",
             relief="flat",
             font=("Segoe UI", 10, "bold")
         )
-        style.map("Treeview.Heading", background=[("active", "#161b22")])
-        style.map("Treeview", background=[("selected", COLOR_SECUNDARIO)], foreground=[("selected", "#000000")])
+        
+        style.map("Treeview.Heading", background=[("active", R_COLOR_TABLA_HEAD)])
+        style.map("Treeview", background=[("selected", "#00d4aa")], foreground=[("selected", "black")])
 
     def _configurar_interfaz(self):
         # Header
         header = tk.Frame(self, bg=COLOR_FONDO)
-        header.pack(fill="x", pady=(0, 20))
-        tk.Label(header, text="Gestión de Aparatos", font=FUENTE_TITULO, bg=COLOR_FONDO, fg="white").pack(anchor="w")
-        tk.Label(header, text="Control de inventario y estado de máquinas", font=("Segoe UI", 11), bg=COLOR_FONDO, fg=COLOR_TEXTO_SECUNDARIO).pack(anchor="w")
+        header.pack(fill="x", pady=(0, 15))
+        
+        tk.Label(
+            header, text="Gestión de Aparatos",
+            font=("Segoe UI", 24, "bold"),
+            bg=COLOR_FONDO, fg="#00d4aa"
+        ).pack(anchor="w")
+        
+        tk.Label(
+            header, text="Control de inventario y estado de máquinas",
+            font=("Segoe UI", 11), bg=COLOR_FONDO, fg="#A9B4C6"
+        ).pack(anchor="w")
 
-        # Card
-        card = tk.Frame(self, bg=COLOR_FONDO_CARD)
+        # CONTENEDOR PRINCIPAL CON BORDE NEON
+        borde_card = tk.Frame(self, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        borde_card.pack(fill="both", expand=True)
+
+        card = tk.Frame(borde_card, bg=R_COLOR_PANEL)
         card.pack(fill="both", expand=True)
 
         # Formulario
-        form = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        form.pack(fill="x", padx=30, pady=30)
+        form = tk.Frame(card, bg=R_COLOR_PANEL)
+        form.pack(fill="x", padx=20, pady=20)
         
         # Inputs
+        # Fila 0
         self.entry_nombre = self._crear_input_moderno(form, "Nombre del Aparato", 0, 0)
-        
-        # Combos
         self.combo_tipo = self._crear_combo_moderno(form, "Tipo", ["Cardio", "Fuerza", "Flexibilidad", "Funcional", "Otro"], 0, 1)
+        
+        # Fila 1
         self.combo_estado = self._crear_combo_moderno(form, "Estado", ["disponible", "en_uso", "mantenimiento"], 1, 0)
-
-        # Descripción
-        desc_frame = tk.Frame(form, bg=COLOR_FONDO_CARD)
-        desc_frame.grid(row=1, column=1, padx=20, pady=10, sticky="ew")
-        tk.Label(desc_frame, text="DESCRIPCIÓN", font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
-        self.text_descripcion = tk.Text(desc_frame, height=3, bg=COLOR_INPUT_BG, fg="white", bd=0, font=FUENTE_NORMAL)
+        
+        # Descripción (Area de texto con borde)
+        desc_container = tk.Frame(form, bg=R_COLOR_PANEL)
+        desc_container.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+        form.grid_columnconfigure(0, weight=1)
+        form.grid_columnconfigure(1, weight=1)
+        
+        tk.Label(desc_container, text="DESCRIPCIÓN", font=("Segoe UI", 8, "bold"), fg="#A9B4C6", bg=R_COLOR_PANEL).pack(anchor="w", pady=(0, 2))
+        
+        border_desc = tk.Frame(desc_container, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        border_desc.pack(fill="x")
+        
+        self.text_descripcion = tk.Text(
+            border_desc, height=3, bg=R_COLOR_INPUT_BG, fg="white", 
+            bd=5, font=("Segoe UI", 10), relief="flat", insertbackground="#00d4aa"
+        )
         self.text_descripcion.pack(fill="x")
 
         # Botones
-        btns = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        btns.pack(fill="x", padx=30, pady=(0, 20))
-        self._crear_boton(btns, "NUEVO", self.nuevo_aparato, ESTILO_BOTON_SECUNDARIO).pack(side="left", padx=(0, 10))
-        self._crear_boton(btns, "GUARDAR", self.guardar_aparato, ESTILO_BOTON_EXITO).pack(side="left", padx=(0, 10))
-        self._crear_boton(btns, "MODIFICAR", self.modificar_aparato, ESTILO_BOTON_ADVERTENCIA).pack(side="left", padx=(0, 10))
-        self._crear_boton(btns, "ELIMINAR", self.eliminar_aparato, ESTILO_BOTON_PELIGRO).pack(side="left")
+        btns = tk.Frame(card, bg=R_COLOR_PANEL)
+        btns.pack(fill="x", padx=20, pady=(0, 15))
+        
+        self._crear_boton_refinado(btns, "NUEVO", self.nuevo_aparato, R_COLOR_BTN_NUEVO).pack(side="left", padx=(0, 10))
+        self._crear_boton_refinado(btns, "GUARDAR", self.guardar_aparato, R_COLOR_BTN_GUARDAR).pack(side="left", padx=(0, 10))
+        self._crear_boton_refinado(btns, "MODIFICAR", self.modificar_aparato, R_COLOR_BTN_MODIFICAR).pack(side="left", padx=(0, 10))
+        self._crear_boton_refinado(btns, "ELIMINAR", self.eliminar_aparato, R_COLOR_BTN_ELIMINAR).pack(side="left")
 
         # Tabla
-        table_frame = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
         
         scrollbar_y = tk.Scrollbar(table_frame); scrollbar_y.pack(side="right", fill="y")
+        
         self.tree = ttk.Treeview(table_frame, columns=("ID", "Nombre", "Tipo", "Estado", "Descripción"), show="headings", yscrollcommand=scrollbar_y.set)
         scrollbar_y.config(command=self.tree.yview)
         
         for col in ("ID", "Nombre", "Tipo", "Estado", "Descripción"):
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100 if col != "Descripción" else 250)
+            width = 80 if col != "Descripción" else 200
+            if col == "ID": width = 50
+            self.tree.column(col, width=width)
             
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_aparato)
 
     def _crear_input_moderno(self, parent, label, row, col):
-        frame = tk.Frame(parent, bg=COLOR_FONDO_CARD)
-        frame.grid(row=row, column=col, padx=20, pady=10, sticky="ew")
-        parent.grid_columnconfigure(col, weight=1)
-        tk.Label(frame, text=label.upper(), font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
-        border = tk.Frame(frame, bg=COLOR_INPUT_BORDER, padx=1, pady=1); border.pack(fill="x")
-        entry = tk.Entry(border, bg=COLOR_INPUT_BG, fg="white", insertbackground=COLOR_SECUNDARIO, font=FUENTE_NORMAL, relief="flat", bd=5)
+        frame = tk.Frame(parent, bg=R_COLOR_PANEL)
+        frame.grid(row=row, column=col, padx=10, pady=5, sticky="ew")
+        
+        tk.Label(frame, text=label.upper(), font=("Segoe UI", 8, "bold"), fg="#A9B4C6", bg=R_COLOR_PANEL).pack(anchor="w", pady=(0, 2))
+        
+        border = tk.Frame(frame, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        border.pack(fill="x")
+        
+        entry = tk.Entry(
+            border, bg=R_COLOR_INPUT_BG, fg="white", 
+            insertbackground="#00d4aa", font=("Segoe UI", 10), 
+            relief="flat", bd=5
+        )
         entry.pack(fill="x")
-        def on_in(e): border.config(bg=COLOR_SECUNDARIO)
-        def on_out(e): border.config(bg=COLOR_INPUT_BORDER)
-        entry.bind("<FocusIn>", on_in); entry.bind("<FocusOut>", on_out)
         return entry
 
     def _crear_combo_moderno(self, parent, label, values, row, col):
-        frame = tk.Frame(parent, bg=COLOR_FONDO_CARD)
-        frame.grid(row=row, column=col, padx=20, pady=10, sticky="ew")
-        parent.grid_columnconfigure(col, weight=1)
-        tk.Label(frame, text=label.upper(), font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
-        combo = ttk.Combobox(frame, values=values, state="readonly", font=FUENTE_NORMAL)
-        combo.pack(fill="x", ipady=4)
-        combo.current(0)
+        frame = tk.Frame(parent, bg=R_COLOR_PANEL)
+        frame.grid(row=row, column=col, padx=10, pady=5, sticky="ew")
+        
+        tk.Label(frame, text=label.upper(), font=("Segoe UI", 8, "bold"), fg="#A9B4C6", bg=R_COLOR_PANEL).pack(anchor="w", pady=(0, 2))
+        
+        combo = ttk.Combobox(frame, values=values, state="readonly", font=("Segoe UI", 10))
+        combo.pack(fill="x", ipady=2)
+        if values: combo.current(0)
         return combo
 
-    def _crear_boton(self, parent, text, cmd, style):
-        return tk.Button(parent, text=text, command=cmd, **style)
+    def _crear_boton_refinado(self, parent, text, cmd, bg_color):
+        btn = tk.Button(
+            parent, text=text, command=cmd,
+            bg=bg_color, fg="white",
+            font=("Segoe UI", 9, "bold"),
+            relief="flat",
+            activebackground="white",
+            activeforeground=bg_color,
+            cursor="hand2",
+            padx=15, pady=4
+        )
+        def on_enter(e): btn['bg'] = self._lighten_color(bg_color)
+        def on_leave(e): btn['bg'] = bg_color
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        return btn
+
+    def _lighten_color(self, color):
+        hover_map = {
+            R_COLOR_BTN_NUEVO: "#33e0c0",
+            R_COLOR_BTN_GUARDAR: "#58d68d",
+            R_COLOR_BTN_MODIFICAR: "#f5b041",
+            R_COLOR_BTN_ELIMINAR: "#ec7063"
+        }
+        return hover_map.get(color, color)
 
     # ---------------------------------------------------------
-    #   LOGICA
+    #   LOGICA (Mantenida idéntica)
     # ---------------------------------------------------------
     def nuevo_aparato(self):
         self.limpiar_formulario()

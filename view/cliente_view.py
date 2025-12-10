@@ -1,5 +1,5 @@
 """
-Vista de Clientes (Rediseño Dark Neon)
+Vista de Clientes (Rediseño Refinado Dark Neon)
 """
 
 import tkinter as tk
@@ -8,6 +8,20 @@ from controller.cliente_controller import ClienteController
 from util.helpers import formatear_fecha, obtener_fecha_actual
 from util.validaciones import validar_dni, validar_email, validar_telefono
 from resources.style.colores import *
+
+# --- NUEVOS COLORES REFINADOS ---
+R_COLOR_PANEL = "#151C25"
+R_COLOR_BORDE_PANEL = "#00d4aa"  # Turquesa
+R_COLOR_INPUT_BG = "#0F1620"
+R_COLOR_INPUT_TEXT = "#E4E8EC"
+R_COLOR_PLACEHOLDER = "#8A96A8"
+R_COLOR_BTN_NUEVO = "#00d4aa"
+R_COLOR_BTN_GUARDAR = "#3CA9FF"
+R_COLOR_BTN_MODIFICAR = "#FF9F45"
+R_COLOR_BTN_ELIMINAR = "#FF4F4F"
+R_COLOR_TABLA_BG = "#10171E"
+R_COLOR_TABLA_LINES = "#2B3440"
+R_COLOR_TABLA_HEAD = "#1D2630"
 
 class ClienteView(tk.Frame):
     def __init__(self, parent, main_window):
@@ -24,103 +38,111 @@ class ClienteView(tk.Frame):
         style = ttk.Style()
         style.theme_use("clam")
         
-        # Estilo para el Treeview Dark
+        # Estilo Treeview Refinado
         style.configure(
             "Treeview",
-            background="#161b22",
+            background=R_COLOR_TABLA_BG,
             foreground="white",
-            fieldbackground="#161b22",
+            fieldbackground=R_COLOR_TABLA_BG,
             borderwidth=0,
             font=("Segoe UI", 10),
-            rowheight=30
+            rowheight=25
         )
         
         style.configure(
             "Treeview.Heading",
-            background="#0d1117",
-            foreground=COLOR_SECUNDARIO,
+            background=R_COLOR_TABLA_HEAD,
+            foreground="white",
             relief="flat",
-            font=("Segoe UI", 10, "bold")
+            font=("Segoe UI", 11, "bold")
         )
         
-        style.map("Treeview.Heading", background=[("active", "#161b22")])
-        style.map("Treeview", background=[("selected", COLOR_SECUNDARIO)], foreground=[("selected", "#000000")])
+        style.map("Treeview.Heading", background=[("active", R_COLOR_TABLA_HEAD)])
+        style.map("Treeview", background=[("selected", "#00d4aa")], foreground=[("selected", "black")])  # Turquesa suave
 
     def _configurar_interfaz(self):
-        # Header
+        # Header (Jerarquía visual recuperada)
         header = tk.Frame(self, bg=COLOR_FONDO)
-        header.pack(fill="x", pady=(0, 20))
+        header.pack(fill="x", pady=(0, 15))
         
         tk.Label(
             header, text="Gestión de Clientes",
-            font=FUENTE_TITULO, bg=COLOR_FONDO, fg="white"
+            font=("Segoe UI", 24, "bold"),  # Fuente más grande
+            bg=COLOR_FONDO, fg="#00d4aa"
         ).pack(anchor="w")
         
         tk.Label(
             header, text="Administra los socios del gimnasio",
-            font=("Segoe UI", 11), bg=COLOR_FONDO, fg=COLOR_TEXTO_SECUNDARIO
+            font=("Segoe UI", 11), bg=COLOR_FONDO, fg="#A9B4C6"  # Gris claro
         ).pack(anchor="w")
 
-        # Contenedor Principal (Card)
-        card = tk.Frame(self, bg=COLOR_FONDO_CARD)
+        # Contenedor Principal (Card Refinada)
+        # Simulamos borde turquesa suave con un frame contenedor
+        borde_card = tk.Frame(self, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)  # Borde 1px
+        borde_card.pack(fill="both", expand=True)
+
+        card = tk.Frame(borde_card, bg=R_COLOR_PANEL)
         card.pack(fill="both", expand=True)
 
         # ---------------------------------------------------------
-        # FORMULARIO (Dos columnas)
+        # FORMULARIO
         # ---------------------------------------------------------
-        form_frame = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        form_frame.pack(fill="x", padx=30, pady=30)
+        form_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        form_frame.pack(fill="x", padx=20, pady=15)
         
-        # Grid Config
         form_frame.columnconfigure(0, weight=1)
         form_frame.columnconfigure(1, weight=1)
 
         # Columna 1
-        self.entry_nombre = self._crear_input_moderno(form_frame, "Nombre", 0, 0)
-        self.entry_dni = self._crear_input_moderno(form_frame, "DNI", 1, 0)
-        self.entry_telefono = self._crear_input_moderno(form_frame, "Teléfono", 2, 0)
+        self.entry_nombre = self._crear_input_refinado(form_frame, "Nombre", 0, 0)
+        self.entry_dni = self._crear_input_refinado(form_frame, "DNI", 1, 0)
+        self.entry_telefono = self._crear_input_refinado(form_frame, "Teléfono", 2, 0)
         
         # Columna 2
-        self.entry_apellidos = self._crear_input_moderno(form_frame, "Apellidos", 0, 1)
-        self.entry_email = self._crear_input_moderno(form_frame, "Email", 1, 1)
+        self.entry_apellidos = self._crear_input_refinado(form_frame, "Apellidos", 0, 1)
+        self.entry_email = self._crear_input_refinado(form_frame, "Email", 1, 1)
         
-        # Combo Estado (Custom Frame simple)
-        frame_estado = tk.Frame(form_frame, bg=COLOR_FONDO_CARD)
-        frame_estado.grid(row=2, column=1, padx=20, pady=10, sticky="ew")
+        # Combo Estado
+        frame_estado = tk.Frame(form_frame, bg=R_COLOR_PANEL)
+        frame_estado.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
         
-        tk.Label(frame_estado, text="ESTADO", font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", pady=(0, 5))
+        tk.Label(frame_estado, text="ESTADO", font=("Segoe UI", 9, "bold"), fg="#A9B4C6", bg=R_COLOR_PANEL).pack(anchor="w", pady=(0, 2))
         
-        self.combo_estado = ttk.Combobox(frame_estado, values=["activo", "inactivo"], state="readonly", font=FUENTE_NORMAL)
-        self.combo_estado.pack(fill="x", ipady=4)
+        self.combo_estado = ttk.Combobox(frame_estado, values=["activo", "inactivo"], state="readonly", font=("Segoe UI", 11))
+        self.combo_estado.pack(fill="x", ipady=6)
         self.combo_estado.current(0)
 
         # ---------------------------------------------------------
         # BOTONERA ACCIONES
         # ---------------------------------------------------------
-        btn_frame = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        btn_frame.pack(fill="x", padx=30, pady=(0, 20))
+        btn_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        btn_frame.pack(fill="x", padx=20, pady=(10, 15))
         
-        self._crear_boton(btn_frame, "NUEVO", self._nuevo_cliente, ESTILO_BOTON_SECUNDARIO).pack(side="left", padx=(0, 10))
-        self._crear_boton(btn_frame, "GUARDAR", self._guardar_cliente, ESTILO_BOTON_EXITO).pack(side="left", padx=(0, 10))
-        self._crear_boton(btn_frame, "MODIFICAR", self._modificar_cliente, ESTILO_BOTON_ADVERTENCIA).pack(side="left", padx=(0, 10))
-        self._crear_boton(btn_frame, "ELIMINAR", self._eliminar_cliente, ESTILO_BOTON_PELIGRO).pack(side="left")
+        self._crear_boton_refinado(btn_frame, "NUEVO", self._nuevo_cliente, R_COLOR_BTN_NUEVO).pack(side="left", padx=(0, 15))
+        self._crear_boton_refinado(btn_frame, "GUARDAR", self._guardar_cliente, R_COLOR_BTN_GUARDAR).pack(side="left", padx=(0, 15))
+        self._crear_boton_refinado(btn_frame, "MODIFICAR", self._modificar_cliente, R_COLOR_BTN_MODIFICAR).pack(side="left", padx=(0, 15))
+        self._crear_boton_refinado(btn_frame, "ELIMINAR", self._eliminar_cliente, R_COLOR_BTN_ELIMINAR).pack(side="left")
 
         # ---------------------------------------------------------
         # BUSCADOR Y TABLA
         # ---------------------------------------------------------
-        search_frame = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        search_frame.pack(fill="x", padx=30, pady=(10, 10))
+        search_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        search_frame.pack(fill="x", padx=20, pady=(5, 10))
         
-        self.entry_buscar = tk.Entry(search_frame, bg="#0d1117", fg="white", insertbackground=COLOR_SECUNDARIO,
-                                     font=FUENTE_NORMAL, relief="flat", bd=1)
-        self.entry_buscar.pack(side="left", fill="x", expand=True, ipady=5, padx=(0, 10))
+        # Buscador estilo input refinado
+        b_search = tk.Frame(search_frame, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        b_search.pack(side="left", fill="x", expand=True, padx=(0, 15))
         
-        self._crear_boton(search_frame, "BUSCAR", self._buscar_clientes, ESTILO_BOTON_INFO).pack(side="left")
-        self._crear_boton(search_frame, "VER TODOS", self._cargar_clientes, ESTILO_BOTON_NEUTRAL).pack(side="left", padx=(10, 0))
+        self.entry_buscar = tk.Entry(b_search, bg=R_COLOR_INPUT_BG, fg=R_COLOR_INPUT_TEXT, insertbackground="#00d4aa",
+                                     font=("Segoe UI", 11), relief="flat", bd=8)
+        self.entry_buscar.pack(fill="x")
+        
+        self._crear_boton_refinado(search_frame, "BUSCAR", self._buscar_clientes, "#3498db").pack(side="left") # Azul estándar para buscar
+        self._crear_boton_refinado(search_frame, "VER TODOS", self._cargar_clientes, "#95a5a6").pack(side="left", padx=(10, 0))
 
         # Tabla
-        table_frame = tk.Frame(card, bg=COLOR_FONDO_CARD)
-        table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 30))
+        table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
         
         scrollbar_y = tk.Scrollbar(table_frame)
         scrollbar_y.pack(side="right", fill="y")
@@ -131,50 +153,76 @@ class ClienteView(tk.Frame):
         
         for col in cols:
             self.tree.heading(col, text=col)
-            width = 50 if col == "ID" else 150
+            width = 60 if col == "ID" else 160
             self.tree.column(col, width=width)
             
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._seleccionar_cliente)
 
-    def _crear_input_moderno(self, parent, label, row, col):
-        """Crea un campo de entrada con estilo dark/neon."""
-        frame = tk.Frame(parent, bg=COLOR_FONDO_CARD)
-        frame.grid(row=row, column=col, padx=20, pady=10, sticky="ew")
+    def _crear_input_refinado(self, parent, label, row, col):
+        frame = tk.Frame(parent, bg=R_COLOR_PANEL)
+        frame.grid(row=row, column=col, padx=10, pady=5, sticky="ew")
         
-        # Label
         tk.Label(
-            frame, text=label.upper(), font=("Segoe UI", 8, "bold"),
-            fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD
-        ).pack(anchor="w", pady=(0, 5))
+            frame, text=label.upper(), font=("Segoe UI", 9, "bold"),
+            fg="#A9B4C6", bg=R_COLOR_PANEL
+        ).pack(anchor="w", pady=(0, 2))
         
-        # Borde contenedor
-        border = tk.Frame(frame, bg=COLOR_INPUT_BORDER, padx=1, pady=1)
+        # Borde turquesa uniforme
+        border = tk.Frame(frame, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
         border.pack(fill="x")
         
-        # Entry
         entry = tk.Entry(
-            border, bg=COLOR_INPUT_BG, fg="white",
-            insertbackground=COLOR_SECUNDARIO, font=FUENTE_NORMAL,
-            relief="flat", bd=5 # Padding interno simulado
+            border, bg=R_COLOR_INPUT_BG, fg=R_COLOR_INPUT_TEXT,
+            insertbackground="#00d4aa", font=("Segoe UI", 11),
+            relief="flat", bd=5
         )
         entry.pack(fill="x")
         
-        # Efectos Focus
-        def on_focus_in(e): border.config(bg=COLOR_SECUNDARIO)
-        def on_focus_out(e): border.config(bg=COLOR_INPUT_BORDER)
-        
-        entry.bind("<FocusIn>", on_focus_in)
-        entry.bind("<FocusOut>", on_focus_out)
-        
         return entry
 
-    def _crear_boton(self, parent, text, command, style_dict):
-        btn = tk.Button(parent, text=text, command=command, **style_dict)
+    def _crear_boton_refinado(self, parent, text, cmd, bg_color):
+        # Botón estilo plano, relieve FLAT
+        btn = tk.Button(
+            parent, text=text, command=cmd,
+            bg=bg_color, fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief="flat",
+            activebackground="white", # Efecto visual simple
+            activeforeground=bg_color,
+            cursor="hand2",
+            padx=20, pady=5 # Padding interno botón
+        )
+        
+        # Simulación Hover: aclarar 
+        def on_enter(e):
+            btn['bg'] = self._lighten_color(bg_color, factor=1.2) # Helper simple para aclarar
+        def on_leave(e):
+            btn['bg'] = bg_color
+            
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        
         return btn
+    
+    def _lighten_color(self, color, factor=1.2):
+        # Simple lightening logic if hex
+        # Return same color if complex logic needed, but basic hex tweak is okay-ish or just mapped colors
+        # For simplicity and robustness without converting hex->rgb->hex manually in code:
+        # We will use hardcoded hover variants if simple, or just a known lighter shade.
+        # Let's map them for quality:
+        hover_map = {
+            R_COLOR_BTN_NUEVO: "#33e0c0",
+            R_COLOR_BTN_GUARDAR: "#6ac0ff",
+            R_COLOR_BTN_MODIFICAR: "#ffb46e",
+            R_COLOR_BTN_ELIMINAR: "#ff7676",
+            "#3498db": "#5dade2",
+            "#95a5a6": "#b2babb"
+        }
+        return hover_map.get(color, color)
 
     # ---------------------------------------------------------
-    #   LÓGICA CRUD
+    #   LÓGICA CRUD (Misma lógica, no tocar)
     # ---------------------------------------------------------
     def _validar_datos(self):
         nombre = self.entry_nombre.get().strip()
@@ -184,7 +232,7 @@ class ClienteView(tk.Frame):
         if not nombre or not apellidos or not dni:
             messagebox.showwarning("Faltan datos", "Nombre, Apellidos y DNI son obligatorios.")
             return False
-        return True 
+        return True
 
     def _nuevo_cliente(self):
         self._limpiar_formulario()

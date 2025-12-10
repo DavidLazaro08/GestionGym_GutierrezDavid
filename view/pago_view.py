@@ -1,5 +1,5 @@
 """
-Vista de Pagos (Rediseño Dark Neon)
+Vista de Pagos (Rediseño Matrix/Neon)
 """
 
 import tkinter as tk
@@ -10,6 +10,21 @@ from controller.cliente_controller import ClienteController
 from util.helpers import formatear_fecha, formatear_cuota
 from view.ventana_pago import VentanaPago
 from resources.style.colores import *
+
+# --- ESTILOS MATRIX / NEON REFINADOS (Copiados de ClienteView) ---
+R_COLOR_PANEL = "#151C25"
+R_COLOR_BORDE_PANEL = "#00d4aa"  # Turquesa
+R_COLOR_INPUT_BG = "#0F1620"
+R_COLOR_INPUT_TEXT = "#E4E8EC"
+R_COLOR_PLACEHOLDER = "#8A96A8"
+R_COLOR_BTN_GENERAR = "#00d4aa"        # Turquesa
+R_COLOR_BTN_FILTRAR = "#3498db"        # Azul
+R_COLOR_BTN_TODOS = "#95a5a6"          # Gris
+R_COLOR_BTN_PENDIENTES = "#f39c12"     # Naranja
+R_COLOR_BTN_PAGAR = "#2ecc71"          # Verde
+R_COLOR_BTN_ELIMINAR = "#e74c3c"       # Rojo
+R_COLOR_TABLA_BG = "#10171E"
+R_COLOR_TABLA_HEAD = "#1D2630"
 
 class PagoView(tk.Frame):
     def __init__(self, parent, main_window):
@@ -29,86 +44,149 @@ class PagoView(tk.Frame):
     def _configurar_estilos_treeview(self):
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("Treeview", background="#161b22", foreground="white", fieldbackground="#161b22", borderwidth=0, font=("Segoe UI", 10), rowheight=30)
-        style.configure("Treeview.Heading", background="#0d1117", foreground=COLOR_SECUNDARIO, relief="flat", font=("Segoe UI", 10, "bold"))
-        style.map("Treeview.Heading", background=[("active", "#161b22")])
-        style.map("Treeview", background=[("selected", COLOR_SECUNDARIO)], foreground=[("selected", "#000000")])
+        
+        # Estilo Matrix Compacto
+        style.configure(
+            "Treeview",
+            background=R_COLOR_TABLA_BG,
+            foreground="white",
+            fieldbackground=R_COLOR_TABLA_BG,
+            borderwidth=0,
+            font=("Segoe UI", 10),
+            rowheight=25
+        )
+        
+        style.configure(
+            "Treeview.Heading",
+            background=R_COLOR_TABLA_HEAD,
+            foreground="white",
+            relief="flat",
+            font=("Segoe UI", 10, "bold")
+        )
+        
+        style.map("Treeview.Heading", background=[("active", R_COLOR_TABLA_HEAD)])
+        style.map("Treeview", background=[("selected", "#00d4aa")], foreground=[("selected", "black")])
 
     def _configurar_interfaz(self):
         # Header
         header = tk.Frame(self, bg=COLOR_FONDO)
-        header.pack(fill="x", pady=(0, 20))
-        tk.Label(header, text="Gestión de Pagos", font=FUENTE_TITULO, bg=COLOR_FONDO, fg="white").pack(anchor="w")
-        tk.Label(header, text="Control mensual de cuotas", font=FUENTE_SUBTITULO, bg=COLOR_FONDO, fg=COLOR_TEXTO_SECUNDARIO).pack(anchor="w")
+        header.pack(fill="x", pady=(0, 15))
+        
+        tk.Label(
+            header, text="Gestión de Pagos",
+            font=("Segoe UI", 24, "bold"),
+            bg=COLOR_FONDO, fg="#00d4aa"
+        ).pack(anchor="w")
+        
+        tk.Label(
+            header, text="Control mensual de cuotas",
+            font=("Segoe UI", 11), bg=COLOR_FONDO, fg="#A9B4C6"
+        ).pack(anchor="w")
 
-        # Generar Pagos Card
-        gen_card = tk.Frame(self, bg=COLOR_FONDO_CARD)
-        gen_card.pack(fill="x", pady=(0, 20))
+        # CONTENEDOR PRINCIPAL CON BORDE NEON
+        borde_card = tk.Frame(self, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        borde_card.pack(fill="both", expand=True)
+
+        card = tk.Frame(borde_card, bg=R_COLOR_PANEL)
+        card.pack(fill="both", expand=True)
+
+        # SECCION 1: GENERAR PAGOS
+        frame_generar = tk.Frame(card, bg=R_COLOR_PANEL)
+        frame_generar.pack(fill="x", padx=20, pady=(15, 10))
         
-        tk.Label(gen_card, text="GENERAR PAGOS MENSUALES", font=("Segoe UI", 8, "bold"), fg=COLOR_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", padx=20, pady=(15, 10))
+        tk.Label(frame_generar, text="GENERAR PAGOS MENSUALES", font=("Segoe UI", 9, "bold"), fg="#A9B4C6", bg=R_COLOR_PANEL).pack(anchor="w", pady=(0, 5))
         
-        gen_frame = tk.Frame(gen_card, bg=COLOR_FONDO_CARD)
-        gen_frame.pack(fill="x", padx=20, pady=(0, 20))
+        cont_cols_gen = tk.Frame(frame_generar, bg=R_COLOR_PANEL)
+        cont_cols_gen.pack(fill="x")
         
-        self.combo_mes = ttk.Combobox(gen_frame, values=["01 - Enero", "02 - Febrero", "03 - Marzo", "04 - Abril", "05 - Mayo", "06 - Junio", "07 - Julio", "08 - Agosto", "09 - Septiembre", "10 - Octubre", "11 - Noviembre", "12 - Diciembre"], state="readonly", width=15)
+        # Combos simulados con estilo simple (Combobox nativo es difícil de estilizar full, lo mantenemos limpio)
+        self.combo_mes = ttk.Combobox(cont_cols_gen, values=["01 - Enero", "02 - Febrero", "03 - Marzo", "04 - Abril", "05 - Mayo", "06 - Junio", "07 - Julio", "08 - Agosto", "09 - Septiembre", "10 - Octubre", "11 - Noviembre", "12 - Diciembre"], state="readonly", width=15, font=("Segoe UI", 10))
         self.combo_mes.pack(side="left", padx=(0, 10))
-        self.combo_anio = ttk.Combobox(gen_frame, values=[str(a) for a in range(2023, 2032)], state="readonly", width=8)
-        self.combo_anio.pack(side="left", padx=(0, 10))
         
-        # Init date combos
+        self.combo_anio = ttk.Combobox(cont_cols_gen, values=[str(a) for a in range(2023, 2032)], state="readonly", width=8, font=("Segoe UI", 10))
+        self.combo_anio.pack(side="left", padx=(0, 15))
+        
+        # Init date
         hoy = datetime.now()
         self.combo_mes.current(hoy.month - 1)
         self.combo_anio.set(str(hoy.year))
         
-        self._crear_boton(gen_frame, "GENERAR", self.generar_pagos_mes, ESTILO_BOTON_EXITO).pack(side="left")
+        self._crear_boton_refinado(cont_cols_gen, "GENERAR", self.generar_pagos_mes, R_COLOR_BTN_GENERAR).pack(side="left")
 
-        # Filtros Card
-        filt_card = tk.Frame(self, bg=COLOR_FONDO_CARD)
-        filt_card.pack(fill="x", pady=(0, 20))
+        # SECCION 2: FILTROS
+        frame_filtros = tk.Frame(card, bg=R_COLOR_PANEL)
+        frame_filtros.pack(fill="x", padx=20, pady=(10, 10))
         
-        tk.Label(filt_card, text="FILTROS", font=("Segoe UI", 8, "bold"), fg=COLOR_TEXTO_SECUNDARIO, bg=COLOR_FONDO_CARD).pack(anchor="w", padx=20, pady=(15, 10))
+        tk.Label(frame_filtros, text="FILTROS", font=("Segoe UI", 9, "bold"), fg="#A9B4C6", bg=R_COLOR_PANEL).pack(anchor="w", pady=(0, 5))
         
-        filt_frame = tk.Frame(filt_card, bg=COLOR_FONDO_CARD)
-        filt_frame.pack(fill="x", padx=20, pady=(0, 20))
+        cont_cols_filt = tk.Frame(frame_filtros, bg=R_COLOR_PANEL)
+        cont_cols_filt.pack(fill="x")
         
-        self.combo_filtro_cliente = ttk.Combobox(filt_frame, width=30, state="readonly")
-        self.combo_filtro_cliente.pack(side="left", padx=(0, 10))
+        self.combo_filtro_cliente = ttk.Combobox(cont_cols_filt, width=30, state="readonly", font=("Segoe UI", 10))
+        self.combo_filtro_cliente.pack(side="left", padx=(0, 15))
         
-        self._crear_boton(filt_frame, "FILTRAR", self.filtrar_por_cliente, ESTILO_BOTON_INFO).pack(side="left", padx=(0, 10))
-        self._crear_boton(filt_frame, "MOSTRAR TODOS", self.cargar_pagos, ESTILO_BOTON_NEUTRAL).pack(side="left", padx=(0, 10))
-        self._crear_boton(filt_frame, "SOLO PENDIENTES", self.mostrar_pendientes, ESTILO_BOTON_ADVERTENCIA).pack(side="left")
+        self._crear_boton_refinado(cont_cols_filt, "FILTRAR", self.filtrar_por_cliente, R_COLOR_BTN_FILTRAR).pack(side="left", padx=(0, 10))
+        self._crear_boton_refinado(cont_cols_filt, "VER TODOS", self.cargar_pagos, R_COLOR_BTN_TODOS).pack(side="left", padx=(0, 10))
+        self._crear_boton_refinado(cont_cols_filt, "PENDIENTES", self.mostrar_pendientes, R_COLOR_BTN_PENDIENTES).pack(side="left")
 
-        # Tabla Card
-        table_card = tk.Frame(self, bg=COLOR_FONDO_CARD)
-        table_card.pack(fill="both", expand=True)
+        # SECCION 3: ACCIONES TABLA
+        frame_acciones = tk.Frame(card, bg=R_COLOR_PANEL)
+        frame_acciones.pack(fill="x", padx=20, pady=(15, 5))
         
-        # Acciones
-        act_frame = tk.Frame(table_card, bg=COLOR_FONDO_CARD)
-        act_frame.pack(fill="x", padx=20, pady=20)
-        self._crear_boton(act_frame, "MARCAR PAGADO", self.marcar_pagado, ESTILO_BOTON_EXITO).pack(side="left", padx=(0, 10))
-        self._crear_boton(act_frame, "ELIMINAR", self.eliminar_pago, ESTILO_BOTON_PELIGRO).pack(side="left", padx=(0, 10))
+        self._crear_boton_refinado(frame_acciones, "MARCAR PAGADO", self.marcar_pagado, R_COLOR_BTN_PAGAR).pack(side="left", padx=(0, 15))
+        self._crear_boton_refinado(frame_acciones, "ELIMINAR", self.eliminar_pago, R_COLOR_BTN_ELIMINAR).pack(side="left")
+
+        # TABLA
+        table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=(10, 20))
         
-        # Tabla
-        table_frame = tk.Frame(table_card, bg=COLOR_FONDO_CARD)
-        table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+        scrollbar_y = tk.Scrollbar(table_frame)
+        scrollbar_y.pack(side="right", fill="y")
         
-        scr_y = tk.Scrollbar(table_frame); scr_y.pack(side="right", fill="y")
         cols = ("ID", "Cliente", "Mes", "Estado", "Cuota", "F. Pago", "Método")
-        self.tree = ttk.Treeview(table_frame, columns=cols, show="headings", yscrollcommand=scr_y.set)
-        scr_y.config(command=self.tree.yview)
+        self.tree = ttk.Treeview(table_frame, columns=cols, show="headings", yscrollcommand=scrollbar_y.set)
+        scrollbar_y.config(command=self.tree.yview)
         
         for col in cols:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=60 if col=="ID" else 120)
+            width = 50 if col == "ID" else 100
+            if col == "Cliente": width = 180
+            self.tree.column(col, width=width)
             
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_pago)
 
-    def _crear_boton(self, parent, text, cmd, style):
-        return tk.Button(parent, text=text, command=cmd, **style)
+    def _crear_boton_refinado(self, parent, text, cmd, bg_color):
+        btn = tk.Button(
+            parent, text=text, command=cmd,
+            bg=bg_color, fg="white",
+            font=("Segoe UI", 9, "bold"),
+            relief="flat",
+            activebackground="white",
+            activeforeground=bg_color,
+            cursor="hand2",
+            padx=15, pady=4
+        )
+        def on_enter(e): btn['bg'] = self._lighten_color(bg_color)
+        def on_leave(e): btn['bg'] = bg_color
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        return btn
+
+    def _lighten_color(self, color):
+        # Mapeo simple de hover
+        hover_map = {
+            R_COLOR_BTN_GENERAR: "#33e0c0",
+            R_COLOR_BTN_FILTRAR: "#5dade2",
+            R_COLOR_BTN_TODOS: "#b2babb",
+            R_COLOR_BTN_PENDIENTES: "#f5b041",
+            R_COLOR_BTN_PAGAR: "#58d68d",
+            R_COLOR_BTN_ELIMINAR: "#ec7063"
+        }
+        return hover_map.get(color, color)
 
     # ---------------------------------------------------------
-    #   LOGICA
+    #   LOGICA (Mantenida idéntica)
     # ---------------------------------------------------------
     def cargar_clientes(self):
         try:
@@ -139,9 +217,10 @@ class PagoView(tk.Frame):
     def _llenar_tabla(self, pagos):
         for i in self.tree.get_children(): self.tree.delete(i)
         for p in pagos:
+            val_estado = "PAGADO" if p.pagado else "PENDIENTE"
             self.tree.insert("", "end", values=(
                 p.id_pago, self.clientes_dict.get(p.id_cliente, "Desconocido"),
-                p.mes, "PAGADO" if p.pagado else "PENDIENTE",
+                p.mes, val_estado,
                 formatear_cuota(p.cuota), formatear_fecha(p.fecha_pago), p.metodo_pago or ""
             ))
 
