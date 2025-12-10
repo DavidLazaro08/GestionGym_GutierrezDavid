@@ -1,8 +1,8 @@
-# 🏋️‍♂️ GymForTheMoment – Sistema de Gestión de Gimnasio
+# 🏋️‍♂️ GymForTMoment – Sistema de Gestión de Gimnasio
 
 ## 1. Descripción del proyecto
 
-**GymForTheMoment** es una aplicación de escritorio desarrollada en Python con Tkinter y SQLite, centrada en la gestión interna de un gimnasio que funciona 24 horas de lunes a viernes.
+**GymForTMoment** es una aplicación de escritorio desarrollada en Python con Tkinter y SQLite, centrada en la gestión interna de un gimnasio que funciona 24 horas de lunes a viernes.
 
 El sistema permite administrar:
 - Clientes
