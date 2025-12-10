@@ -62,6 +62,19 @@ Este usuario tiene acceso completo a todas las funciones del sistema.
 > [!NOTE]
 > Si olvidas la contraseña o eliminas al usuario `admin`, el sistema vuelve a crearlo automáticamente al iniciar, siempre que no existan usuarios registrados.
 
+> [!IMPORTANT]
+> **Recuperación de contraseña del administrador**
+>
+> En caso de que la contraseña del usuario `admin` se pierda u olvide, la aplicación incluye un pequeño mecanismo de recuperación interno.
+>
+> Desde la ventana de inicio de sesión se puede acceder a “He olvidado mi contraseña”, donde el sistema solicitará una clave maestra para permitir el restablecimiento.
+>
+> **Clave maestra:** `RESET2025`
+>
+> Tras introducirla, se podrá establecer una nueva contraseña para el usuario administrador.
+>
+> *Este mecanismo existe únicamente con fines académicos para que el evaluador pueda acceder siempre a la aplicación.*
+
 ## 6. Flujo básico de uso
 
 ▶️ **1. Iniciar sesión**
