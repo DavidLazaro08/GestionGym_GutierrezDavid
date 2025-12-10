@@ -92,7 +92,7 @@ class ClienteController:
         """Devuelve una lista con todos los clientes registrados."""
         try:
             self.db.conectar()
-            filas = self.db.obtener_datos("SELECT * FROM Cliente")
+            filas = self.db.obtener_datos("SELECT * FROM Cliente ORDER BY id_cliente DESC")
 
         except ErrorBaseDatos as e:
             raise ErrorBaseDatos(f"No se pudo obtener la lista de clientes: {e}")
