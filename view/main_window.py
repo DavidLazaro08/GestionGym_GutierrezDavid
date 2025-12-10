@@ -2,8 +2,6 @@
 ---------------------------------------------------------
 VENTANA PRINCIPAL
 Interfaz principal del sistema tras iniciar sesión.
-Incluye menú lateral y un área central donde se cargan
-las distintas vistas: clientes, pagos, reservas y aparatos.
 ---------------------------------------------------------
 """
 
@@ -11,320 +9,207 @@ import tkinter as tk
 from tkinter import messagebox
 from data.gestor_bd import GestorBD
 from excepciones import ErrorBaseDatos
-
+from resources.style.colores import *
 
 class MainWindow:
     """Ventana principal con navegación entre módulos."""
 
-    # ---------------------------------------------------------
-    #   CONSTRUCTOR
-    # ---------------------------------------------------------
     def __init__(self, root):
-        """Inicializa la ventana principal del sistema."""
         self.root = root
         self.root.title("GymForTheMoment - Sistema de Gestión")
 
-        # Inicializa la base de datos la primera vez
+        # Maximizar ventana si es posible
+        try:
+            self.root.state('zoomed')
+        except:
+            self.root.geometry("1400x900")
+
+        self.root.configure(bg=COLOR_FONDO)
+
         self.inicializar_bd()
-
         self.vista_actual = None
-
         self.configurar_interfaz()
 
-        # Vista inicial (Clientes)
+        # Vista inicial
         self.mostrar_clientes()
 
-    # ---------------------------------------------------------
-    #   BASE DE DATOS
-    # ---------------------------------------------------------
     def inicializar_bd(self):
-        """Crea las tablas necesarias si no existen y carga datos iniciales."""
         try:
             gestor = GestorBD()
             gestor.conectar()
-
-            # Creamos las tablas si no existen
             gestor.crear_tablas()
 
-            # Comprobamos si la tabla Cliente está vacía
-            total_clientes = gestor.obtener_datos("SELECT COUNT(*) FROM Cliente")[0][0]
-
-            if total_clientes == 0:
-                # Ruta del archivo SQL que dejamos con datos iniciales
+            # Datos demo si está vacío
+            if gestor.obtener_datos("SELECT COUNT(*) FROM Cliente")[0][0] == 0:
                 import os
-                ruta_sql = os.path.join(
-                    os.path.dirname(__file__),
-                    "..",
-                    "data",
-                    "datos_iniciales.sql"
-                )
-                ruta_sql = os.path.abspath(ruta_sql)
+                ruta_sql = os.path.join(os.path.dirname(__file__), "..", "data", "datos_iniciales.sql")
 
-                # Método para ejecutar archivo SQL
-                try:
+                if os.path.exists(ruta_sql):
                     with open(ruta_sql, "r", encoding="utf-8") as f:
-                        sql = f.read()
-                    gestor.cursor.executescript(sql)
-                    gestor.conexion.commit()
-                    print("[INFO] Datos iniciales insertados correctamente.")
-                except Exception as e:
-                    print(f"[ERROR] No se pudieron insertar datos iniciales: {e}")
+                        gestor.cursor.executescript(f.read())
+                        gestor.conexion.commit()
 
             gestor.desconectar()
-
         except ErrorBaseDatos as e:
-            messagebox.showerror(
-                "Error de Base de Datos",
-                f"No se pudo inicializar la base de datos.\n\nDetalle:\n{e}"
-            )
+            messagebox.showerror("Error", f"Error de bases de datos: {e}")
             self.root.destroy()
 
-    # ---------------------------------------------------------
-    #   INTERFAZ PRINCIPAL
-    # ---------------------------------------------------------
     def configurar_interfaz(self):
-        """Configura el menú lateral y el área central del programa."""
-
-        # Limpiar ventana raíz (por si venimos del logout)
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        frame_principal = tk.Frame(self.root, bg="#0a0d12")
+        # Contenedor principal
+        frame_principal = tk.Frame(self.root, bg=COLOR_FONDO)
         frame_principal.pack(fill="both", expand=True)
 
         # ---------------------------------------------------------
-        # MENÚ LATERAL MODERNO CON DEGRADADO
+        # MENÚ LATERAL (Sidebar)
         # ---------------------------------------------------------
-        frame_menu = tk.Frame(frame_principal, bg="#1a2332", width=220)
+        frame_menu = tk.Frame(frame_principal, bg=COLOR_SIDEBAR_BG, width=ANCHO_SIDEBAR)
         frame_menu.pack(side="left", fill="y")
         frame_menu.pack_propagate(False)
 
-        # Canvas con degradado de fondo
-        canvas_menu_bg = tk.Canvas(frame_menu, highlightthickness=0, bd=0)
-        canvas_menu_bg.place(x=0, y=0, width=220, relheight=1.0)
-        
-        # Crear degradado vertical (de arriba a abajo)
-        color_inicio = "#1a2332"
-        color_final = "#0a0d12"
-        
-        r1, g1, b1 = int(color_inicio[1:3], 16), int(color_inicio[3:5], 16), int(color_inicio[5:7], 16)
-        r2, g2, b2 = int(color_final[1:3], 16), int(color_final[3:5], 16), int(color_final[5:7], 16)
-        
-        steps = 200
-        for i in range(steps):
-            r = int(r1 + (r2-r1)*(i/steps))
-            g = int(g1 + (g2-g1)*(i/steps))
-            b = int(b1 + (b2-b1)*(i/steps))
-            color = f"#{r:02x}{g:02x}{b:02x}"
-            canvas_menu_bg.create_rectangle(0, i*3, 220, (i+1)*3, outline=color, fill=color)
-        
-        # Frame para contenido sobre el canvas
-        content_menu = tk.Frame(frame_menu, bg="#1a2332")
-        content_menu.place(x=0, y=0, width=220, relheight=1.0)
-
-        # ---------------------------------------------------------
-        # LOGO
-        # ---------------------------------------------------------
+        # Logo
         try:
             from PIL import Image, ImageTk
-            from resources.style.colores import LOGO_TEXTO
-            
-            logo_img = Image.open(LOGO_TEXTO)
-            w, h = logo_img.size
-            new_w = 180
+            img = Image.open(LOGO_TEXTO)
+            w, h = img.size
+            new_w = int(ANCHO_SIDEBAR * 0.8)
             new_h = int((new_w / w) * h)
-            
-            logo_img = logo_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-            self.logo_sidebar = ImageTk.PhotoImage(logo_img)
-            
+            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            self.logo_sidebar = ImageTk.PhotoImage(img)
+
+            tk.Label(frame_menu, image=self.logo_sidebar, bg=COLOR_SIDEBAR_BG).pack(pady=(30, 20))
+        except:
             tk.Label(
-                content_menu,
-                image=self.logo_sidebar,
-                bg="#1a2332"
-            ).pack(pady=(20, 15))
-            
-        except Exception as e:
-            # Fallback si no se encuentra el logo
-            tk.Label(
-                content_menu,
-                text="GymForTheMoment",
-                font=("Segoe UI", 14, "bold"),
-                fg="#00d4aa",
-                bg="#1a2332",
-                pady=20
-            ).pack()
+                frame_menu, text="GFTM", font=("Segoe UI", 20, "bold"),
+                fg=COLOR_SECUNDARIO, bg=COLOR_SIDEBAR_BG
+            ).pack(pady=(30, 20))
 
-        # Separador sutil
-        tk.Frame(content_menu, bg="#2d3a4f", height=1).pack(fill="x", padx=15, pady=(0, 20))
+        # Separador
+        tk.Frame(frame_menu, bg=COLOR_SECUNDARIO, height=1).pack(fill="x", padx=20, pady=(0, 30))
+
+        # Botones navegación
+        self.contenedor_botones = tk.Frame(frame_menu, bg=COLOR_SIDEBAR_BG)
+        self.contenedor_botones.pack(fill="x", padx=10)
+
+        # Botones
+        self._crear_boton_menu("👥  Clientes", self.mostrar_clientes, "#00d4aa")
+        self._crear_boton_menu("💳  Pagos", self.mostrar_pagos, "#f39c12")
+        self._crear_boton_menu("📅  Reservas", self.mostrar_reservas, "#e74c3c")
+        self._crear_boton_menu("🏋  Aparatos", self.mostrar_aparatos, "#8b5cf6")
 
         # ---------------------------------------------------------
-        # BOTONES DE NAVEGACIÓN
+        # BOTÓN CERRAR SESIÓN NUEVO (UNIFICADO)
         # ---------------------------------------------------------
-        botones = [
-            ("📋  Clientes", self.mostrar_clientes, "#00d4aa"),   # Cyan
-            ("💰  Pagos", self.mostrar_pagos, "#3b82f6"),         # Azul
-            ("📅  Reservas", self.mostrar_reservas, "#8b5cf6"),   # Morado
-            ("🏋  Aparatos", self.mostrar_aparatos, "#ef4444"),   # Rojo
-        ]
-
-        for texto, comando, color in botones:
-            # Canvas para el borde de color
-            canvas = tk.Canvas(
-                content_menu,
-                width=220,
-                height=48,
-                bg="#1a2332",
-                highlightthickness=0,
-                bd=0
-            )
-            canvas.pack(pady=4, padx=0)
-            
-            # Borde izquierdo de color
-            borde_id = canvas.create_rectangle(
-                0, 0, 3, 48,
-                fill=color,
-                outline=""
-            )
-            
-            # Fondo del botón (oscuro sutil)
-            fondo_id = canvas.create_rectangle(
-                3, 0, 220, 48,
-                fill="#0f1419",
-                outline=""
-            )
-            
-            # Botón transparente sobre el canvas
-            btn = tk.Button(
-                canvas,
-                text=texto,
-                command=comando,
-                font=("Segoe UI", 11, "bold"),
-                bg="#0f1419",
-                fg="#e2e8f0",
-                relief="flat",
-                cursor="hand2",
-                anchor="w",
-                padx=15,
-                bd=0,
-                activebackground="#2d3a4f",
-                activeforeground="white"
-            )
-            btn.place(x=3, y=0, width=217, height=48)
-            
-            # Efectos hover
-            def on_enter(e, c=canvas, fid=fondo_id, bid=borde_id, col=color, b=btn):
-                c.itemconfig(fid, fill="#2d3a4f")
-                c.itemconfig(bid, fill=self._aclarar_color(col))
-                b.configure(bg="#2d3a4f", fg="white")
-            
-            def on_leave(e, c=canvas, fid=fondo_id, bid=borde_id, col=color, b=btn):
-                c.itemconfig(fid, fill="#0f1419")
-                c.itemconfig(bid, fill=col)
-                b.configure(bg="#0f1419", fg="#e2e8f0")
-            
-            btn.bind("<Enter>", on_enter)
-            btn.bind("<Leave>", on_leave)
-
-        # Espaciador flexible
-        tk.Frame(content_menu, bg="#1a2332").pack(expand=True)
-
-        # ---------------------------------------------------------
-        # BOTÓN CERRAR SESIÓN
-        # ---------------------------------------------------------
-        # Canvas para el botón de logout
-        canvas_logout = tk.Canvas(
-            content_menu,
-            width=220,
-            height=48,
-            bg="#1a2332",
-            highlightthickness=0,
-            bd=0
-        )
-        canvas_logout.pack(pady=15, padx=0, side="bottom")
-        
-        # Fondo del botón (sin borde de color)
-        fondo_logout_id = canvas_logout.create_rectangle(
-            0, 0, 220, 48,
-            fill="#0f1419",
-            outline=""
-        )
+        hover_bg = COLOR_SIDEBAR_HOVER
         
         btn_logout = tk.Button(
-            canvas_logout,
-            text="🚪 Cerrar Sesión",
+            frame_menu,
+            text="⏻  Cerrar Sesión",
             command=self.cerrar_sesion,
-            font=("Segoe UI", 10, "bold"),
-            bg="#0f1419",
-            fg="#9ca3af",
+            font=("Segoe UI", 11, "bold"),
+            bg=COLOR_SIDEBAR_BG,
+            fg="#d16d6d",
             relief="flat",
             cursor="hand2",
             anchor="w",
-            padx=15,
+            padx=20, # Consistent padding
+            pady=12,
             bd=0,
-            activebackground="#2d3a4f",
-            activeforeground="white"
+            activebackground=hover_bg,
+            activeforeground="#ff8a8a"
         )
-        btn_logout.place(x=0, y=0, width=220, height=48)
-        
-        # Efectos hover para logout
+        btn_logout.pack(side="bottom", fill="x", pady=20)
+
         def on_logout_enter(e):
-            canvas_logout.itemconfig(fondo_logout_id, fill="#2d3a4f")
-            btn_logout.configure(bg="#2d3a4f", fg="#e2e8f0")
-        
+            btn_logout.config(bg=hover_bg, fg="#ff8a8a")
+
         def on_logout_leave(e):
-            canvas_logout.itemconfig(fondo_logout_id, fill="#0f1419")
-            btn_logout.configure(bg="#0f1419", fg="#9ca3af")
-        
+            btn_logout.config(bg=COLOR_SIDEBAR_BG, fg="#d16d6d")
+
         btn_logout.bind("<Enter>", on_logout_enter)
         btn_logout.bind("<Leave>", on_logout_leave)
 
         # ---------------------------------------------------------
         # ÁREA DE CONTENIDO
         # ---------------------------------------------------------
-        self.frame_contenido = tk.Frame(frame_principal, bg="#f5f7fa")
+        self.frame_contenido = tk.Frame(frame_principal, bg=COLOR_FONDO)
         self.frame_contenido.pack(side="right", fill="both", expand=True)
 
     # ---------------------------------------------------------
-    #   FUNCIONES AUXILIARES PARA COLORES
+    # BOTÓN MENÚ (FINAL ELEGANTE)
     # ---------------------------------------------------------
-    def _aclarar_color(self, hex_color):
-        """Aclara un color hexadecimal para efecto hover."""
-        hex_color = hex_color.lstrip('#')
-        r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
-        r = min(255, int(r * 1.15))
-        g = min(255, int(g * 1.15))
-        b = min(255, int(b * 1.15))
-        return f"#{r:02x}{g:02x}{b:02x}"
-    
-    def _oscurecer_color(self, hex_color):
-        """Oscurece un color hexadecimal para efecto active."""
-        hex_color = hex_color.lstrip('#')
-        r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
-        r = int(r * 0.85)
-        g = int(g * 0.85)
-        b = int(b * 0.85)
-        return f"#{r:02x}{g:02x}{b:02x}"
+    def _crear_boton_menu(self, texto, comando, color_strip):
+        # Base colors
+        base_bg = COLOR_SIDEBAR_BG
+        hover_bg = COLOR_SIDEBAR_HOVER # "#1f2937" from palette
+        text_normal = "#dfe6e9"
+        
+        # Contenedor principal del botón
+        container = tk.Frame(self.contenedor_botones, bg=base_bg)
+        container.pack(fill="x", pady=2) # Reduced padding for tighter look
+
+        # Franja lateral (Color Strip)
+        strip = tk.Frame(container, bg=color_strip, width=4)
+        strip.pack(side="left", fill="y")
+
+        # Botón
+        btn = tk.Button(
+            container,
+            text=texto,
+            command=comando,
+            font=("Segoe UI", 11), # Slightly lighter weight for elegance? Or keep bold if preferred. User had bold.
+            bg=base_bg,
+            fg=text_normal,
+            relief="flat",
+            cursor="hand2",
+            anchor="w",
+            padx=20, # More padding left
+            pady=12,
+            bd=0,
+            activebackground=hover_bg,
+            activeforeground=color_strip
+        )
+        btn.pack(side="left", fill="both", expand=True)
+
+        # Lógica de Hover suavizada
+        def on_enter(e):
+            # Cambio de fondo
+            container.config(bg=hover_bg)
+            btn.config(bg=hover_bg)
+            # El texto toma el color de la franja (Efecto Neon sutil)
+            btn.config(fg=color_strip)
+
+        def on_leave(e):
+            # Restaurar fondo base
+            container.config(bg=base_bg)
+            btn.config(bg=base_bg)
+            # Restaurar texto
+            btn.config(fg=text_normal)
+
+        # Bind events to both button and container for smooth experience
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        
+        # Optional: Bind strip too in case mouse hits the 4px strip
+        strip.bind("<Enter>", on_enter)
+        strip.bind("<Leave>", on_leave)
 
     # ---------------------------------------------------------
-    #   CAMBIO DE VISTAS
+    # CAMBIO DE VISTAS
     # ---------------------------------------------------------
     def cambiar_vista(self, clase_vista):
-        """Destruye vista actual y carga la nueva en el área central."""
-
         if self.vista_actual:
             self.vista_actual.destroy()
 
         try:
             self.vista_actual = clase_vista(self.frame_contenido, self)
-            self.vista_actual.pack(fill="both", expand=True, padx=20, pady=20)
+            self.vista_actual.pack(fill="both", expand=True, padx=30, pady=30)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error cargando vista: {e}")
 
-        except ErrorBaseDatos as e:
-            messagebox.showerror(
-                "Error cargando módulo",
-                f"No se pudo cargar la vista.\n\nDetalle:\n{e}"
-            )
-
-    # ------- Accesos directos a cada módulo -------
+    # Rutas a vistas
     def mostrar_clientes(self):
         from view.cliente_view import ClienteView
         self.cambiar_vista(ClienteView)
@@ -342,19 +227,10 @@ class MainWindow:
         self.cambiar_vista(AparatoView)
 
     # ---------------------------------------------------------
-    #   CERRAR SESIÓN
+    # CERRAR SESIÓN
     # ---------------------------------------------------------
     def cerrar_sesion(self):
-        """Vuelve a la pantalla de login tras confirmación."""
-        if not messagebox.askyesno("Cerrar sesión", "¿Desea cerrar sesión?"):
-            return
-
-        if self.vista_actual:
-            self.vista_actual.destroy()
-
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        from view.login_view import LoginView
-        login = LoginView(self.root)
-        login.pack(fill="both", expand=True)
+        if messagebox.askyesno("Salir", "¿Cerrar sesión?"):
+            self.root.destroy()
+            import sys, os
+            os.execl(sys.executable, sys.executable, *sys.argv)

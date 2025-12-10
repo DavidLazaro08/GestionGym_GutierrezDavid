@@ -1,491 +1,453 @@
 """
 Vista de Clientes
-Interfaz para gestionar clientes.
+Pantalla para gestionar los socios del gimnasio.
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-
 from controller.cliente_controller import ClienteController
 from util.helpers import formatear_fecha, obtener_fecha_actual
-from util.validaciones import (
-    validar_dni,
-    validar_email,
-    validar_telefono
-)
+from util.validaciones import validar_dni, validar_email, validar_telefono
+from resources.style.colores import *
+
+# Colores propios de esta vista (modo oscuro)
+R_COLOR_PANEL = "#151C25"
+R_COLOR_BORDE_PANEL = "#00d4aa"   # Turquesa
+R_COLOR_INPUT_BG = "#0F1620"
+R_COLOR_INPUT_TEXT = "#E4E8EC"
+R_COLOR_PLACEHOLDER = "#8A96A8"
+R_COLOR_BTN_NUEVO = "#00d4aa"
+R_COLOR_BTN_GUARDAR = "#3CA9FF"
+R_COLOR_BTN_MODIFICAR = "#FF9F45"
+R_COLOR_BTN_ELIMINAR = "#FF4F4F"
+R_COLOR_TABLA_BG = "#10171E"
+R_COLOR_TABLA_LINES = "#2B3440"
+R_COLOR_TABLA_HEAD = "#1D2630"
 
 
 class ClienteView(tk.Frame):
-    """Vista de gestión de clientes."""
-
-    # ---------------------------------------------------------
-    #   CONSTRUCTOR
-    # ---------------------------------------------------------
     def __init__(self, parent, main_window):
-        super().__init__(parent, bg="#e5ecf2")  # Fondo suave moderno
-
+        super().__init__(parent, bg=COLOR_FONDO)
         self.main_window = main_window
         self.controller = ClienteController()
         self.id_cliente_seleccionado = None
 
-        self._configurar_estilos()
+        self._configurar_estilos_treeview()
         self._configurar_interfaz()
         self._cargar_clientes()
 
     # ---------------------------------------------------------
     #   ESTILOS
     # ---------------------------------------------------------
-    def _configurar_estilos(self):
+    def _configurar_estilos_treeview(self):
         style = ttk.Style()
         style.theme_use("clam")
 
+        # Estilo base para la tabla
         style.configure(
-            "Clientes.Treeview",
-            background="#ffffff",
-            foreground="#1f2937",
-            fieldbackground="#ffffff",
+            "Treeview",
+            background=R_COLOR_TABLA_BG,
+            foreground="white",
+            fieldbackground=R_COLOR_TABLA_BG,
             borderwidth=0,
-            font=("Segoe UI", 10)
+            font=("Segoe UI", 10),
+            rowheight=25
         )
 
+        # Cabecera de la tabla
         style.configure(
-            "Clientes.Treeview.Heading",
-            background="#f3f4f6",
-            foreground="#1f2937",
+            "Treeview.Heading",
+            background=R_COLOR_TABLA_HEAD,
+            foreground="white",
             relief="flat",
-            font=("Segoe UI", 10, "bold")
+            font=("Segoe UI", 11, "bold")
         )
 
-        style.map("Clientes.Treeview.Heading",
-                  background=[("active", "#e5e7eb")])
-
+        style.map("Treeview.Heading", background=[("active", R_COLOR_TABLA_HEAD)])
         style.map(
-            "Clientes.Treeview",
+            "Treeview",
             background=[("selected", "#00d4aa")],
-            foreground=[("selected", "#ffffff")]
+            foreground=[("selected", "black")]
         )
 
+        # --- ESTILO SCROLLBAR ---
+        style.configure(
+            "Vertical.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.configure(
+            "Horizontal.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.map("Vertical.TScrollbar", background=[("active", "#00d4aa")])
+        style.map("Horizontal.TScrollbar", background=[("active", "#00d4aa")])
+    
     # ---------------------------------------------------------
     #   INTERFAZ
     # ---------------------------------------------------------
     def _configurar_interfaz(self):
-
-        # ---------- TÍTULO ----------
-        titulo = tk.Label(
-            self,
-            text="Gestión de Clientes",
-            font=("Segoe UI", 26, "bold"),
-            fg="#00d4aa",
-            bg="#e5ecf2"
-        )
-        titulo.pack(pady=(25, 5))
-
-        subtitulo = tk.Label(
-            self,
-            text="Altas, bajas y edición de clientes del gimnasio",
-            font=("Segoe UI", 10),
-            fg="#556070",
-            bg="#e5ecf2"
-        )
-        subtitulo.pack(pady=(0, 15))
-
-        # ---------- TARJETA PRINCIPAL ----------
-        tarjeta = tk.Frame(
-            self,
-            bg="#ffffff",
-            highlightbackground="#d0d7e2",
-            highlightthickness=1,
-            bd=0
-        )
-        tarjeta.pack(padx=20, pady=20, fill="both")
-
-        # ---------- FORMULARIO ----------
-        frame_form = tk.Frame(tarjeta, bg="#f8fafc")
-        frame_form.pack(fill="x", padx=20, pady=20)
+        # Cabecera
+        header = tk.Frame(self, bg=COLOR_FONDO)
+        header.pack(fill="x", pady=(0, 15))
 
         tk.Label(
-            frame_form,
-            text="Datos del Cliente",
-            font=("Segoe UI", 14, "bold"),
-            fg="#1f2937",
-            bg="#f8fafc"
-        ).grid(row=0, column=0, columnspan=4, pady=(0, 15), sticky="w")
+            header,
+            text="Gestión de Clientes",
+            font=("Segoe UI", 24, "bold"),
+            bg=COLOR_FONDO,
+            fg="#00d4aa"
+        ).pack(anchor="w")
 
-        def crear_label(row, col, texto):
-            tk.Label(
-                frame_form,
-                text=texto,
-                font=("Segoe UI", 10, "bold"),
-                fg="#4b5563",
-                bg="#f8fafc"
-            ).grid(row=row, column=col, sticky="w", padx=(5, 5), pady=6)
+        tk.Label(
+            header,
+            text="Administra los socios del gimnasio",
+            font=("Segoe UI", 11),
+            bg=COLOR_FONDO,
+            fg="#A9B4C6"
+        ).pack(anchor="w")
 
-        def crear_entry(row, col):
-            e = tk.Entry(
-                frame_form,
-                width=30,
-                font=("Segoe UI", 10),
-                bg="#ffffff",
-                fg="#1f2937",
-                relief="solid",
-                bd=1
-            )
-            e.grid(row=row, column=col, padx=10, pady=6)
-            return e
+        # Contenedor principal con borde turquesa
+        borde_card = tk.Frame(self, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        borde_card.pack(fill="both", expand=True)
 
-        # Nombre
-        crear_label(1, 0, "Nombre:")
-        self.entry_nombre = crear_entry(1, 1)
+        card = tk.Frame(borde_card, bg=R_COLOR_PANEL)
+        card.pack(fill="both", expand=True)
 
-        # Apellidos
-        crear_label(1, 2, "Apellidos:")
-        self.entry_apellidos = crear_entry(1, 3)
+        # -------- FORMULARIO --------
+        form_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        form_frame.pack(fill="x", padx=20, pady=15)
 
-        # DNI
-        crear_label(2, 0, "DNI:")
-        self.entry_dni = crear_entry(2, 1)
+        form_frame.columnconfigure(0, weight=1)
+        form_frame.columnconfigure(1, weight=1)
 
-        # Email
-        crear_label(2, 2, "Email:")
-        self.entry_email = crear_entry(2, 3)
+        # Columna 1
+        self.entry_nombre = self._crear_input_refinado(form_frame, "Nombre", 0, 0)
+        self.entry_dni = self._crear_input_refinado(form_frame, "DNI", 1, 0)
+        self.entry_telefono = self._crear_input_refinado(form_frame, "Teléfono", 2, 0)
 
-        # Teléfono
-        crear_label(3, 0, "Teléfono:")
-        self.entry_telefono = crear_entry(3, 1)
+        # Columna 2
+        self.entry_apellidos = self._crear_input_refinado(form_frame, "Apellidos", 0, 1)
+        self.entry_email = self._crear_input_refinado(form_frame, "Email", 1, 1)
 
         # Estado
-        crear_label(3, 2, "Estado:")
-        self.combo_estado = ttk.Combobox(
-            frame_form,
-            values=["activo", "inactivo"],
-            width=28,
-            state="readonly",
-            font=("Segoe UI", 10)
-        )
-        self.combo_estado.grid(row=3, column=3, padx=10, pady=6)
-        self.combo_estado.current(0)
-
-        # ---------- BOTONES ----------
-        frame_botones = tk.Frame(tarjeta, bg="#ffffff")
-        frame_botones.pack(pady=(5, 15))
-
-        def boton(texto, comando, color, act_color):
-            return tk.Button(
-                frame_botones,
-                text=texto,
-                command=comando,
-                bg=color,
-                fg="white",
-                font=("Segoe UI", 10, "bold"),
-                width=12,
-                relief="flat",
-                cursor="hand2",
-                activebackground=act_color,
-                bd=0
-            )
-
-        boton("Nuevo", self._nuevo_cliente, "#00d4aa", "#0aa58d").grid(row=0, column=0, padx=5)
-        boton("Guardar", self._guardar_cliente, "#2563eb", "#1e40af").grid(row=0, column=1, padx=5)
-        boton("Modificar", self._modificar_cliente, "#8b5cf6", "#6d28d9").grid(row=0, column=2, padx=5)
-        boton("Eliminar", self._eliminar_cliente, "#ef4444", "#b91c1c").grid(row=0, column=3, padx=5)
-
-        # ---------- BUSCADOR ----------
-        frame_busqueda = tk.Frame(tarjeta, bg="#ffffff")
-        frame_busqueda.pack(pady=10)
+        frame_estado = tk.Frame(form_frame, bg=R_COLOR_PANEL)
+        frame_estado.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(
-            frame_busqueda,
-            text="Buscar:",
-            font=("Segoe UI", 10, "bold"),
-            fg="#4b5563",
-            bg="#ffffff"
-        ).grid(row=0, column=0, padx=5, pady=5)
+            frame_estado,
+            text="ESTADO",
+            font=("Segoe UI", 9, "bold"),
+            fg="#A9B4C6",
+            bg=R_COLOR_PANEL
+        ).pack(anchor="w", pady=(0, 2))
+
+        self.combo_estado = ttk.Combobox(
+            frame_estado,
+            values=["activo", "inactivo"],
+            state="readonly",
+            font=("Segoe UI", 11)
+        )
+        self.combo_estado.pack(fill="x", ipady=6)
+        self.combo_estado.current(0)
+
+        # -------- BOTONES --------
+        btn_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        btn_frame.pack(fill="x", padx=20, pady=(10, 15))
+
+        self._crear_boton_refinado(
+            btn_frame, "NUEVO", self._nuevo_cliente, R_COLOR_BTN_NUEVO
+        ).pack(side="left", padx=(0, 15))
+
+        self._crear_boton_refinado(
+            btn_frame, "GUARDAR", self._guardar_cliente, R_COLOR_BTN_GUARDAR
+        ).pack(side="left", padx=(0, 15))
+
+        self._crear_boton_refinado(
+            btn_frame, "MODIFICAR", self._modificar_cliente, R_COLOR_BTN_MODIFICAR
+        ).pack(side="left", padx=(0, 15))
+
+        self._crear_boton_refinado(
+            btn_frame, "ELIMINAR", self._eliminar_cliente, R_COLOR_BTN_ELIMINAR
+        ).pack(side="left")
+
+        # -------- BUSCADOR --------
+        search_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        search_frame.pack(fill="x", padx=20, pady=(5, 10))
+
+        b_search = tk.Frame(search_frame, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        b_search.pack(side="left", fill="x", expand=True, padx=(0, 15))
 
         self.entry_buscar = tk.Entry(
-            frame_busqueda,
-            width=40,
-            font=("Segoe UI", 10),
-            bg="#ffffff",
-            fg="#1f2937",
-            relief="solid",
-            bd=1
+            b_search,
+            bg=R_COLOR_INPUT_BG,
+            fg=R_COLOR_INPUT_TEXT,
+            insertbackground="#00d4aa",
+            font=("Segoe UI", 11),
+            relief="flat",
+            bd=8
         )
-        self.entry_buscar.grid(row=0, column=1, padx=8, pady=5)
+        self.entry_buscar.pack(fill="x")
 
-        tk.Button(
-            frame_busqueda,
-            text="Buscar",
-            command=self._buscar_clientes,
-            bg="#8b5cf6",
-            fg="white",
-            font=("Segoe UI", 10, "bold"),
-            relief="flat",
-            cursor="hand2",
-            bd=0
-        ).grid(row=0, column=2, padx=5, pady=5)
+        self._crear_boton_refinado(
+            search_frame, "BUSCAR", self._buscar_clientes, "#3498db"
+        ).pack(side="left")
 
-        tk.Button(
-            frame_busqueda,
-            text="Mostrar Todos",
-            command=self._cargar_clientes,
-            bg="#6b7280",
-            fg="white",
-            font=("Segoe UI", 10, "bold"),
-            relief="flat",
-            cursor="hand2",
-            bd=0
-        ).grid(row=0, column=3, padx=5, pady=5)
+        self._crear_boton_refinado(
+            search_frame, "VER TODOS", self._cargar_clientes, "#95a5a6"
+        ).pack(side="left", padx=(10, 0))
 
-        # ---------- TABLA ----------
-        frame_tabla = tk.Frame(tarjeta, bg="#ffffff")
-        frame_tabla.pack(padx=20, pady=(10, 20), fill="both", expand=True)
+        # -------- TABLA --------
+        table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
-        scrollbar_y = tk.Scrollbar(frame_tabla, orient="vertical")
+        scrollbar_y = ttk.Scrollbar(table_frame, orient="vertical")
         scrollbar_y.pack(side="right", fill="y")
 
-        scrollbar_x = tk.Scrollbar(frame_tabla, orient="horizontal")
+        scrollbar_x = ttk.Scrollbar(table_frame, orient="horizontal")
         scrollbar_x.pack(side="bottom", fill="x")
 
-        columnas = ("ID", "Nombre", "Apellidos", "DNI", "Email", "Teléfono", "Fecha", "Estado")
-
+        cols = ("ID", "Nombre", "Apellidos", "DNI", "Email", "Teléfono", "Fecha", "Estado")
         self.tree = ttk.Treeview(
-            frame_tabla,
-            columns=columnas,
+            table_frame,
+            columns=cols,
             show="headings",
             yscrollcommand=scrollbar_y.set,
-            xscrollcommand=scrollbar_x.set,
-            style="Clientes.Treeview"
+            xscrollcommand=scrollbar_x.set
         )
-
         scrollbar_y.config(command=self.tree.yview)
         scrollbar_x.config(command=self.tree.xview)
 
-        titulos = {
-            "ID": "ID",
-            "Nombre": "Nombre",
-            "Apellidos": "Apellidos",
-            "DNI": "DNI",
-            "Email": "Email",
-            "Teléfono": "Teléfono",
-            "Fecha": "Fecha Registro",
-            "Estado": "Estado"
-        }
-
-        for col in columnas:
-            self.tree.heading(col, text=titulos[col])
-            self.tree.column(col, width=110 if col != "ID" else 50)
+        for col in cols:
+            self.tree.heading(col, text=col)
+            width = 60 if col == "ID" else 160
+            self.tree.column(col, width=width)
 
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self._seleccionar_cliente)
 
+    # Crea un input con su etiqueta y borde turquesa
+    def _crear_input_refinado(self, parent, label, row, col):
+        frame = tk.Frame(parent, bg=R_COLOR_PANEL)
+        frame.grid(row=row, column=col, padx=10, pady=5, sticky="ew")
+
+        tk.Label(
+            frame,
+            text=label.upper(),
+            font=("Segoe UI", 9, "bold"),
+            fg="#A9B4C6",
+            bg=R_COLOR_PANEL
+        ).pack(anchor="w", pady=(0, 2))
+
+        border = tk.Frame(frame, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        border.pack(fill="x")
+
+        entry = tk.Entry(
+            border,
+            bg=R_COLOR_INPUT_BG,
+            fg=R_COLOR_INPUT_TEXT,
+            insertbackground="#00d4aa",
+            font=("Segoe UI", 11),
+            relief="flat",
+            bd=5
+        )
+        entry.pack(fill="x")
+
+        return entry
+
+    # Crea un botón con efecto hover sencillo
+    def _crear_boton_refinado(self, parent, text, cmd, bg_color):
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=cmd,
+            bg=bg_color,
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            relief="flat",
+            activebackground="white",
+            activeforeground=bg_color,
+            cursor="hand2",
+            padx=20,
+            pady=5
+        )
+
+        def on_enter(e):
+            btn["bg"] = self._lighten_color(bg_color)
+
+        def on_leave(e):
+            btn["bg"] = bg_color
+
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+
+        return btn
+
+    def _lighten_color(self, color, factor=1.2):
+        # Mapa simple de colores para el efecto hover
+        hover_map = {
+            R_COLOR_BTN_NUEVO: "#33e0c0",
+            R_COLOR_BTN_GUARDAR: "#6ac0ff",
+            R_COLOR_BTN_MODIFICAR: "#ffb46e",
+            R_COLOR_BTN_ELIMINAR: "#ff7676",
+            "#3498db": "#5dade2",
+            "#95a5a6": "#b2babb",
+        }
+        return hover_map.get(color, color)
+
     # ---------------------------------------------------------
-    #   VALIDACIÓN
+    #   LÓGICA / CRUD
     # ---------------------------------------------------------
-    def _validar_datos(self, nombre, apellidos, dni, email, telefono):
-        if not nombre or not apellidos or not dni:
-            messagebox.showwarning("Campos obligatorios",
-                                   "El nombre, los apellidos y el DNI son obligatorios.")
-            return False
-
-        if not validar_dni(dni):
-            messagebox.showerror("DNI incorrecto", "El DNI introducido no es válido.")
-            return False
-
-        if email and not validar_email(email):
-            messagebox.showerror("Email incorrecto",
-                                 "Revise el formato del correo electrónico.")
-            return False
-
-        if telefono and not validar_telefono(telefono):
-            messagebox.showerror("Teléfono incorrecto",
-                                 "El teléfono debe tener 9 dígitos válidos.")
-            return False
-
-        return True
-
-    # ---------------------------------------------------------
-    #   CRUD
-    # ---------------------------------------------------------
-    def _nuevo_cliente(self):
-        self._limpiar_formulario()
-        self.id_cliente_seleccionado = None
-
-    def _guardar_cliente(self):
+    def _validar_datos(self):
         nombre = self.entry_nombre.get().strip()
         apellidos = self.entry_apellidos.get().strip()
         dni = self.entry_dni.get().strip()
-        email = self.entry_email.get().strip()
-        telefono = self.entry_telefono.get().strip()
 
-        if not self._validar_datos(nombre, apellidos, dni, email, telefono):
+        if not nombre or not apellidos or not dni:
+            messagebox.showwarning(
+                "Faltan datos",
+                "Nombre, Apellidos y DNI son obligatorios."
+            )
+            return False
+        return True
+
+    def _nuevo_cliente(self):
+        self._limpiar_formulario()
+
+    def _guardar_cliente(self):
+        if not self._validar_datos():
             return
-
-        fecha_alta = obtener_fecha_actual()
 
         try:
             self.controller.crear_cliente(
-                nombre, apellidos, dni, email, telefono, fecha_alta
+                self.entry_nombre.get(),
+                self.entry_apellidos.get(),
+                self.entry_dni.get(),
+                self.entry_email.get(),
+                self.entry_telefono.get(),
+                obtener_fecha_actual()
             )
-
-            messagebox.showinfo("Éxito", "Cliente guardado correctamente.")
+            messagebox.showinfo("Éxito", "Cliente creado.")
             self._limpiar_formulario()
             self._cargar_clientes()
-
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
     def _modificar_cliente(self):
         if not self.id_cliente_seleccionado:
-            messagebox.showwarning("Advertencia",
-                                   "Debe seleccionar un cliente.")
             return
-
-        nombre = self.entry_nombre.get().strip()
-        apellidos = self.entry_apellidos.get().strip()
-        dni = self.entry_dni.get().strip()
-        email = self.entry_email.get().strip()
-        telefono = self.entry_telefono.get().strip()
-        estado = self.combo_estado.get()
-
-        if not self._validar_datos(nombre, apellidos, dni, email, telefono):
-            return
-
         try:
-            ok = self.controller.actualizar_cliente(
+            self.controller.actualizar_cliente(
                 self.id_cliente_seleccionado,
-                nombre=nombre,
-                apellidos=apellidos,
-                dni=dni,
-                email=email,
-                telefono=telefono,
-                estado=estado
+                nombre=self.entry_nombre.get(),
+                apellidos=self.entry_apellidos.get(),
+                dni=self.entry_dni.get(),
+                email=self.entry_email.get(),
+                telefono=self.entry_telefono.get(),
+                estado=self.combo_estado.get()
             )
-
-            if ok:
-                messagebox.showinfo("Éxito", "Cliente modificado correctamente.")
-                self._limpiar_formulario()
-                self._cargar_clientes()
-            else:
-                messagebox.showerror("Error", "No se pudo modificar el cliente.")
-
+            messagebox.showinfo("Éxito", "Cliente actualizado.")
+            self._cargar_clientes()
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
     def _eliminar_cliente(self):
         if not self.id_cliente_seleccionado:
-            messagebox.showwarning("Advertencia",
-                                   "Debe seleccionar un cliente.")
             return
-
-        if not messagebox.askyesno("Confirmar", "¿Eliminar cliente?"):
-            return
-
-        try:
-            ok = self.controller.eliminar_cliente(self.id_cliente_seleccionado)
-
-            if ok:
-                messagebox.showinfo("Éxito", "Cliente eliminado correctamente.")
-                self._limpiar_formulario()
-                self._cargar_clientes()
-            else:
-                messagebox.showerror("Error", "No se pudo eliminar el cliente.")
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+        if messagebox.askyesno("Confirmar", "¿Eliminar cliente?"):
+            self.controller.eliminar_cliente(self.id_cliente_seleccionado)
+            self._limpiar_formulario()
+            self._cargar_clientes()
 
     # ---------------------------------------------------------
     #   TABLA
     # ---------------------------------------------------------
     def _cargar_clientes(self):
-        try:
-            clientes = self.controller.obtener_todos_clientes()
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-            self.tree.delete(*self.tree.get_children())
-
-            for c in clientes:
-                self.tree.insert(
-                    "",
-                    "end",
-                    values=(
-                        c.id_cliente,
-                        c.nombre,
-                        c.apellidos,
-                        c.dni,
-                        c.email,
-                        c.telefono,
-                        formatear_fecha(c.fecha_alta),
-                        c.estado
-                    )
+        clientes = self.controller.obtener_todos_clientes()
+        for c in clientes:
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    c.id_cliente,
+                    c.nombre,
+                    c.apellidos,
+                    c.dni,
+                    c.email,
+                    c.telefono,
+                    c.fecha_alta,
+                    c.estado
                 )
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+            )
 
     def _buscar_clientes(self):
-        criterio = self.entry_buscar.get().strip()
-
+        criterio = self.entry_buscar.get()
         if not criterio:
-            messagebox.showwarning("Advertencia", "Ingrese un criterio de búsqueda.")
             return
 
-        try:
-            clientes = self.controller.buscar_clientes(criterio)
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-            self.tree.delete(*self.tree.get_children())
-
-            for c in clientes:
-                self.tree.insert(
-                    "",
-                    "end",
-                    values=(
-                        c.id_cliente,
-                        c.nombre,
-                        c.apellidos,
-                        c.dni,
-                        c.email,
-                        c.telefono,
-                        formatear_fecha(c.fecha_alta),
-                        c.estado
-                    )
+        clientes = self.controller.buscar_clientes(criterio)
+        for c in clientes:
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    c.id_cliente,
+                    c.nombre,
+                    c.apellidos,
+                    c.dni,
+                    c.email,
+                    c.telefono,
+                    c.fecha_alta,
+                    c.estado
                 )
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+            )
 
     def _seleccionar_cliente(self, event):
-        seleccion = self.tree.selection()
-        if not seleccion:
+        sel = self.tree.selection()
+        if not sel:
             return
 
-        valores = self.tree.item(seleccion[0])["values"]
-
-        self.id_cliente_seleccionado = valores[0]
+        vals = self.tree.item(sel[0])["values"]
+        self.id_cliente_seleccionado = vals[0]
 
         self.entry_nombre.delete(0, "end")
-        self.entry_nombre.insert(0, valores[1])
+        self.entry_nombre.insert(0, vals[1])
 
         self.entry_apellidos.delete(0, "end")
-        self.entry_apellidos.insert(0, valores[2])
+        self.entry_apellidos.insert(0, vals[2])
 
         self.entry_dni.delete(0, "end")
-        self.entry_dni.insert(0, valores[3])
+        self.entry_dni.insert(0, vals[3])
 
         self.entry_email.delete(0, "end")
-        self.entry_email.insert(0, valores[4])
+        self.entry_email.insert(0, vals[4])
 
         self.entry_telefono.delete(0, "end")
-        self.entry_telefono.insert(0, valores[5])
+        self.entry_telefono.insert(0, vals[5])
 
-        self.combo_estado.set(valores[7])
+        self.combo_estado.set(vals[7])
 
     # ---------------------------------------------------------
-    #   UTILIDADES
+    #   LIMPIEZA FORMULARIO
     # ---------------------------------------------------------
     def _limpiar_formulario(self):
+        self.id_cliente_seleccionado = None
         self.entry_nombre.delete(0, "end")
         self.entry_apellidos.delete(0, "end")
         self.entry_dni.delete(0, "end")
         self.entry_email.delete(0, "end")
         self.entry_telefono.delete(0, "end")
         self.combo_estado.current(0)
-        self.id_cliente_seleccionado = None

@@ -1,145 +1,244 @@
 """
-Vista de Pagos
-Interfaz para gestionar pagos mensuales de los clientes.
+Vista de Pagos (tema dark / neon)
 """
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import date, datetime
+from datetime import datetime
 
 from controller.pago_controller import PagoController
 from controller.cliente_controller import ClienteController
 from util.helpers import formatear_fecha, formatear_cuota
 from util.validaciones import validar_fecha
 from view.ventana_pago import VentanaPago
+from resources.style.colores import *
+
+# Paleta usada en el resto de vistas dark
+R_COLOR_PANEL = "#151C25"
+R_COLOR_BORDE_PANEL = "#00d4aa"
+R_COLOR_INPUT_BG = "#0F1620"
+R_COLOR_INPUT_TEXT = "#E4E8EC"
+R_COLOR_BTN_GENERAR = "#00d4aa"
+R_COLOR_BTN_FILTRAR = "#3498db"
+R_COLOR_BTN_TODOS = "#95a5a6"
+R_COLOR_BTN_PENDIENTES = "#f39c12"
+R_COLOR_BTN_PAGAR = "#2ecc71"
+R_COLOR_BTN_ELIMINAR = "#e74c3c"
+R_COLOR_TABLA_BG = "#10171E"
+R_COLOR_TABLA_HEAD = "#1D2630"
 
 
 class PagoView(tk.Frame):
-    """Vista de gestión de pagos (Frame)."""
-
     def __init__(self, parent, main_window):
-        super().__init__(parent, bg="#ecf0f1")
+        super().__init__(parent, bg=COLOR_FONDO)
         self.main_window = main_window
 
         self.controller = PagoController()
         self.cliente_controller = ClienteController()
 
-        self.clientes_dict = {}   # id_cliente → "Nombre Apellido"
+        # id_cliente → "Nombre Apellidos"
+        self.clientes_dict = {}
         self.id_pago_seleccionado = None
 
-        self.configurar_interfaz()
+        self._configurar_estilos_treeview()
+        self._configurar_interfaz()
         self.cargar_clientes()
         self.cargar_pagos()
 
-    # ---------------------------------------------------------
-    #   INTERFAZ PRINCIPAL
-    # ---------------------------------------------------------
-    def configurar_interfaz(self):
+    # --------- ESTILOS TABLA ---------
+    def _configurar_estilos_treeview(self):
+        style = ttk.Style()
+        style.theme_use("clam")
 
-        titulo = tk.Label(
-            self,
+        style.configure(
+            "Treeview",
+            background=R_COLOR_TABLA_BG,
+            foreground="white",
+            fieldbackground=R_COLOR_TABLA_BG,
+            borderwidth=0,
+            font=("Segoe UI", 10),
+            rowheight=25,
+        )
+
+        style.configure(
+            "Treeview.Heading",
+            background=R_COLOR_TABLA_HEAD,
+            foreground="white",
+            relief="flat",
+            font=("Segoe UI", 10, "bold"),
+        )
+
+        style.map("Treeview.Heading", background=[("active", R_COLOR_TABLA_HEAD)])
+        style.map(
+            "Treeview",
+            background=[("selected", "#00d4aa")],
+            foreground=[("selected", "black")],
+        )
+
+        # --- ESTILO SCROLLBAR ---
+        style.configure(
+            "Vertical.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.configure(
+            "Horizontal.TScrollbar",
+            background=R_COLOR_PANEL,
+            troughcolor="#0e1217",
+            bordercolor=R_COLOR_PANEL,
+            arrowcolor="#00d4aa",
+            relief="flat"
+        )
+        style.map("Vertical.TScrollbar", background=[("active", "#00d4aa")])
+        style.map("Horizontal.TScrollbar", background=[("active", "#00d4aa")])
+
+    # --------- INTERFAZ ---------
+    def _configurar_interfaz(self):
+        # Cabecera
+        header = tk.Frame(self, bg=COLOR_FONDO)
+        header.pack(fill="x", pady=(0, 15))
+
+        tk.Label(
+            header,
             text="Gestión de Pagos",
-            font=("Arial", 20, "bold"),
-            fg="#f39c12",
-            bg="#ecf0f1"
-        )
-        titulo.pack(pady=15)
+            font=("Segoe UI", 24, "bold"),
+            bg=COLOR_FONDO,
+            fg="#00d4aa",
+        ).pack(anchor="w")
 
-        # ---------------------------------------------------------
-        #   GENERAR PAGOS DEL MES
-        # ---------------------------------------------------------
-        frame_generar = tk.LabelFrame(self, text="Generar pagos del mes",
-                                      padx=15, pady=10, bg="#ecf0f1")
-        frame_generar.pack(padx=20, pady=10, fill="x")
+        tk.Label(
+            header,
+            text="Control mensual de cuotas",
+            font=("Segoe UI", 11),
+            bg=COLOR_FONDO,
+            fg="#A9B4C6",
+        ).pack(anchor="w")
 
-        tk.Label(frame_generar, text="Mes:").grid(row=0, column=0, padx=5)
+        # Contenedor principal con borde
+        borde_card = tk.Frame(self, bg=R_COLOR_BORDE_PANEL, padx=1, pady=1)
+        borde_card.pack(fill="both", expand=True)
+
+        card = tk.Frame(borde_card, bg=R_COLOR_PANEL)
+        card.pack(fill="both", expand=True)
+
+        # --- Generar pagos del mes ---
+        frame_generar = tk.Frame(card, bg=R_COLOR_PANEL)
+        frame_generar.pack(fill="x", padx=20, pady=(15, 10))
+
+        tk.Label(
+            frame_generar,
+            text="GENERAR PAGOS MENSUALES",
+            font=("Segoe UI", 9, "bold"),
+            fg="#A9B4C6",
+            bg=R_COLOR_PANEL,
+        ).pack(anchor="w", pady=(0, 5))
+
+        cont_cols_gen = tk.Frame(frame_generar, bg=R_COLOR_PANEL)
+        cont_cols_gen.pack(fill="x")
+
         self.combo_mes = ttk.Combobox(
-            frame_generar,
+            cont_cols_gen,
             values=[
-                "01 - Enero", "02 - Febrero", "03 - Marzo", "04 - Abril",
-                "05 - Mayo", "06 - Junio", "07 - Julio", "08 - Agosto",
-                "09 - Septiembre", "10 - Octubre", "11 - Noviembre", "12 - Diciembre"
+                "01 - Enero",
+                "02 - Febrero",
+                "03 - Marzo",
+                "04 - Abril",
+                "05 - Mayo",
+                "06 - Junio",
+                "07 - Julio",
+                "08 - Agosto",
+                "09 - Septiembre",
+                "10 - Octubre",
+                "11 - Noviembre",
+                "12 - Diciembre",
             ],
-            state="readonly", width=20
+            state="readonly",
+            width=15,
+            font=("Segoe UI", 10),
         )
-        self.combo_mes.grid(row=0, column=1, padx=5)
+        self.combo_mes.pack(side="left", padx=(0, 10))
 
-        tk.Label(frame_generar, text="Año:").grid(row=0, column=2, padx=5)
         self.combo_anio = ttk.Combobox(
-            frame_generar,
+            cont_cols_gen,
             values=[str(a) for a in range(2023, 2032)],
-            state="readonly", width=10
+            state="readonly",
+            width=8,
+            font=("Segoe UI", 10),
         )
-        self.combo_anio.grid(row=0, column=3, padx=5)
+        self.combo_anio.pack(side="left", padx=(0, 15))
 
-        # Selección automática mes/año actual
         hoy = datetime.now()
         self.combo_mes.current(hoy.month - 1)
-
-        valores_anio = list(self.combo_anio["values"])
-        if str(hoy.year) not in valores_anio:
-            valores_anio.append(str(hoy.year))
-            self.combo_anio["values"] = valores_anio
-
         self.combo_anio.set(str(hoy.year))
 
-        tk.Button(
-            frame_generar,
-            text="Generar pagos",
-            command=self.generar_pagos_mes,
-            bg="#27ae60", fg="white", width=18
-        ).grid(row=0, column=4, padx=10)
+        self._crear_boton_refinado(
+            cont_cols_gen, "GENERAR", self.generar_pagos_mes, R_COLOR_BTN_GENERAR
+        ).pack(side="left")
 
-        # ---------------------------------------------------------
-        #   FILTROS
-        # ---------------------------------------------------------
-        frame_filtros = tk.LabelFrame(self, text="Filtros", padx=15, pady=10, bg="#ecf0f1")
-        frame_filtros.pack(padx=20, pady=10, fill="x")
+        # --- Filtros ---
+        frame_filtros = tk.Frame(card, bg=R_COLOR_PANEL)
+        frame_filtros.pack(fill="x", padx=20, pady=(10, 10))
 
-        tk.Label(frame_filtros, text="Cliente:").grid(row=0, column=0, padx=5)
-        self.combo_filtro_cliente = ttk.Combobox(frame_filtros, width=40, state="readonly")
-        self.combo_filtro_cliente.grid(row=0, column=1, padx=5)
-
-        tk.Button(
+        tk.Label(
             frame_filtros,
-            text="Filtrar",
-            command=self.filtrar_por_cliente,
-            bg="#3498db", fg="white", width=10
-        ).grid(row=0, column=2, padx=5)
+            text="FILTROS",
+            font=("Segoe UI", 9, "bold"),
+            fg="#A9B4C6",
+            bg=R_COLOR_PANEL,
+        ).pack(anchor="w", pady=(0, 5))
 
-        tk.Button(
-            frame_filtros,
-            text="Ver todos",
-            command=self.cargar_pagos,
-            bg="#95a5a6", fg="white", width=10
-        ).grid(row=0, column=3, padx=5)
+        cont_cols_filt = tk.Frame(frame_filtros, bg=R_COLOR_PANEL)
+        cont_cols_filt.pack(fill="x")
 
-        tk.Button(
-            frame_filtros,
-            text="Pendientes",
-            command=self.mostrar_pendientes,
-            bg="#e67e22", fg="white", width=12
-        ).grid(row=0, column=4, padx=5)
+        self.combo_filtro_cliente = ttk.Combobox(
+            cont_cols_filt, width=30, state="readonly", font=("Segoe UI", 10)
+        )
+        self.combo_filtro_cliente.pack(side="left", padx=(0, 15))
 
-        # ---------------------------------------------------------
-        #   TABLA
-        # ---------------------------------------------------------
-        frame_tabla = tk.Frame(self, bg="#ecf0f1")
-        frame_tabla.pack(padx=20, pady=10, fill="both", expand=True)
+        self._crear_boton_refinado(
+            cont_cols_filt, "FILTRAR", self.filtrar_por_cliente, R_COLOR_BTN_FILTRAR
+        ).pack(side="left", padx=(0, 10))
 
-        scrollbar_y = tk.Scrollbar(frame_tabla, orient="vertical")
+        self._crear_boton_refinado(
+            cont_cols_filt, "VER TODOS", self.cargar_pagos, R_COLOR_BTN_TODOS
+        ).pack(side="left", padx=(0, 10))
+
+        self._crear_boton_refinado(
+            cont_cols_filt, "PENDIENTES", self.mostrar_pendientes, R_COLOR_BTN_PENDIENTES
+        ).pack(side="left")
+
+        # --- Acciones sobre la tabla ---
+        frame_acciones = tk.Frame(card, bg=R_COLOR_PANEL)
+        frame_acciones.pack(fill="x", padx=20, pady=(15, 5))
+
+        self._crear_boton_refinado(
+            frame_acciones,
+            "MARCAR PAGADO",
+            self.marcar_pagado,
+            R_COLOR_BTN_PAGAR,
+        ).pack(side="left", padx=(0, 15))
+
+        self._crear_boton_refinado(
+            frame_acciones, "ELIMINAR", self.eliminar_pago, R_COLOR_BTN_ELIMINAR
+        ).pack(side="left")
+
+        # --- Tabla ---
+        table_frame = tk.Frame(card, bg=R_COLOR_PANEL)
+        table_frame.pack(fill="both", expand=True, padx=20, pady=(10, 20))
+
+        scrollbar_y = ttk.Scrollbar(table_frame, orient="vertical")
         scrollbar_y.pack(side="right", fill="y")
 
-        scrollbar_x = tk.Scrollbar(frame_tabla, orient="horizontal")
+        scrollbar_x = ttk.Scrollbar(table_frame, orient="horizontal")
         scrollbar_x.pack(side="bottom", fill="x")
 
-        columnas = (
-            "ID", "ClienteID", "ClienteNombre", "Mes", "Estado",
-            "F. Generación", "F. Pago", "Cuota", "Método", "Concepto"
-        )
+        columnas = ("ID", "Cliente", "Mes", "Estado", "Cuota", "F. Pago", "Método")
 
         self.tree = ttk.Treeview(
-            frame_tabla,
+            table_frame,
             columns=columnas,
             show="headings",
             yscrollcommand=scrollbar_y.set,
@@ -150,51 +249,54 @@ class PagoView(tk.Frame):
 
         for col in columnas:
             self.tree.heading(col, text=col)
-
-        self.tree.column("ID", width=60)
-        self.tree.column("ClienteID", width=80)
-        self.tree.column("ClienteNombre", width=200)
-        self.tree.column("Mes", width=90)
-        self.tree.column("Estado", width=100)
-        self.tree.column("F. Generación", width=110)
-        self.tree.column("F. Pago", width=110)
-        self.tree.column("Cuota", width=90)
-        self.tree.column("Método", width=120)
-        self.tree.column("Concepto", width=200)
+            width = 120 # aumentamos base
+            if col == "ID": width = 60
+            if col == "Cliente": width = 250
+            if col == "Método": width = 150
+            self.tree.column(col, width=width)
 
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.seleccionar_pago)
 
-        # ---------------------------------------------------------
-        #   BOTONES DE ACCIÓN
-        # ---------------------------------------------------------
-        frame_acciones = tk.Frame(self, bg="#ecf0f1")
-        frame_acciones.pack(pady=10)
+    # --------- BOTONES ---------
+    def _crear_boton_refinado(self, parent, text, cmd, bg_color):
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=cmd,
+            bg=bg_color,
+            fg="white",
+            font=("Segoe UI", 9, "bold"),
+            relief="flat",
+            activebackground="white",
+            activeforeground=bg_color,
+            cursor="hand2",
+            padx=15,
+            pady=4,
+        )
 
-        tk.Button(
-            frame_acciones,
-            text="Marcar como pagado",
-            command=self.marcar_pagado,
-            bg="#2ecc71", fg="white", width=18
-        ).grid(row=0, column=0, padx=10)
+        def on_enter(e):
+            btn["bg"] = self._lighten_color(bg_color)
 
-        tk.Button(
-            frame_acciones,
-            text="Eliminar",
-            command=self.eliminar_pago,
-            bg="#e74c3c", fg="white", width=18
-        ).grid(row=0, column=1, padx=10)
+        def on_leave(e):
+            btn["bg"] = bg_color
 
-        tk.Button(
-            frame_acciones,
-            text="Limpiar selección",
-            command=self.limpiar_seleccion,
-            bg="#7f8c8d", fg="white", width=18
-        ).grid(row=0, column=2, padx=10)
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        return btn
 
-    # ---------------------------------------------------------
-    #   CARGA DE CLIENTES
-    # ---------------------------------------------------------
+    def _lighten_color(self, color):
+        hover_map = {
+            R_COLOR_BTN_GENERAR: "#33e0c0",
+            R_COLOR_BTN_FILTRAR: "#5dade2",
+            R_COLOR_BTN_TODOS: "#b2babb",
+            R_COLOR_BTN_PENDIENTES: "#f5b041",
+            R_COLOR_BTN_PAGAR: "#58d68d",
+            R_COLOR_BTN_ELIMINAR: "#ec7063",
+        }
+        return hover_map.get(color, color)
+
+    # --------- CARGA DE CLIENTES Y PAGOS ---------
     def cargar_clientes(self):
         try:
             clientes = self.cliente_controller.obtener_todos_clientes()
@@ -210,9 +312,6 @@ class PagoView(tk.Frame):
         except Exception as e:
             messagebox.showerror("Error cargando clientes", str(e))
 
-    # ---------------------------------------------------------
-    #   GENERAR PAGOS DEL MES
-    # ---------------------------------------------------------
     def generar_pagos_mes(self):
         try:
             mes_num = self.combo_mes.get().split(" ")[0]
@@ -223,16 +322,13 @@ class PagoView(tk.Frame):
 
             messagebox.showinfo(
                 "Pagos generados",
-                f"Se han creado {cantidad} pagos pendientes."
+                f"Se han creado {cantidad} pagos pendientes.",
             )
             self.cargar_pagos()
 
         except Exception as e:
             messagebox.showerror("Error generando pagos", str(e))
 
-    # ---------------------------------------------------------
-    #   TABLA
-    # ---------------------------------------------------------
     def cargar_pagos(self):
         try:
             self.tree.delete(*self.tree.get_children())
@@ -242,18 +338,19 @@ class PagoView(tk.Frame):
                 nombre = self.clientes_dict.get(p.id_cliente, "Desconocido")
                 estado = "Pagado" if p.pagado else "Pendiente"
 
-                self.tree.insert("", "end", values=(
-                    p.id_pago,
-                    p.id_cliente,
-                    nombre,
-                    p.mes,
-                    estado,
-                    formatear_fecha(p.fecha_generacion),
-                    formatear_fecha(p.fecha_pago),
-                    formatear_cuota(p.cuota),
-                    p.metodo_pago or "",
-                    p.concepto or ""
-                ))
+                self.tree.insert(
+                    "",
+                    "end",
+                    values=(
+                        p.id_pago,
+                        nombre,
+                        p.mes,
+                        estado,
+                        formatear_cuota(p.cuota),
+                        formatear_fecha(p.fecha_pago),
+                        p.metodo_pago or "",
+                    ),
+                )
 
         except Exception as e:
             messagebox.showerror("Error cargando pagos", str(e))
@@ -267,25 +364,24 @@ class PagoView(tk.Frame):
                 if not p.pagado:
                     nombre = self.clientes_dict.get(p.id_cliente, "Desconocido")
 
-                    self.tree.insert("", "end", values=(
-                        p.id_pago,
-                        p.id_cliente,
-                        nombre,
-                        p.mes,
-                        "Pendiente",
-                        formatear_fecha(p.fecha_generacion),
+                    self.tree.insert(
                         "",
-                        formatear_cuota(p.cuota),
-                        "",
-                        ""
-                    ))
+                        "end",
+                        values=(
+                            p.id_pago,
+                            nombre,
+                            p.mes,
+                            "Pendiente",
+                            formatear_cuota(p.cuota),
+                            "",
+                            "",
+                        ),
+                    )
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-    # ---------------------------------------------------------
-    #   FILTROS
-    # ---------------------------------------------------------
+    # --------- FILTROS ---------
     def filtrar_por_cliente(self):
         texto = self.combo_filtro_cliente.get()
         if not texto:
@@ -301,34 +397,29 @@ class PagoView(tk.Frame):
                 estado = "Pagado" if p.pagado else "Pendiente"
                 nombre = self.clientes_dict.get(id_cliente, "Desconocido")
 
-                self.tree.insert("", "end", values=(
-                    p.id_pago,
-                    p.id_cliente,
-                    nombre,
-                    p.mes,
-                    estado,
-                    formatear_fecha(p.fecha_generacion),
-                    formatear_fecha(p.fecha_pago),
-                    formatear_cuota(p.cuota),
-                    p.metodo_pago or "",
-                    p.concepto or ""
-                ))
+                self.tree.insert(
+                    "",
+                    "end",
+                    values=(
+                        p.id_pago,
+                        nombre,
+                        p.mes,
+                        estado,
+                        formatear_cuota(p.cuota),
+                        formatear_fecha(p.fecha_pago),
+                        p.metodo_pago or "",
+                    ),
+                )
 
         except Exception as e:
             messagebox.showerror("Error filtrando pagos", str(e))
 
-    # ---------------------------------------------------------
-    #   SELECCIÓN / ACCIONES
-    # ---------------------------------------------------------
+    # --------- SELECCIÓN / ACCIONES ---------
     def seleccionar_pago(self, event):
         seleccion = self.tree.selection()
         if seleccion:
             valores = self.tree.item(seleccion[0])["values"]
             self.id_pago_seleccionado = valores[0]
-
-    def limpiar_seleccion(self):
-        self.id_pago_seleccionado = None
-        self.tree.selection_remove(self.tree.selection())
 
     def marcar_pagado(self):
         if not self.id_pago_seleccionado:
@@ -339,24 +430,31 @@ class PagoView(tk.Frame):
             pago_obj = self.controller.obtener_pago(self.id_pago_seleccionado)
 
             if pago_obj.pagado:
-                messagebox.showinfo("Pago ya registrado", "Este pago ya está pagado.")
+                messagebox.showinfo(
+                    "Pago ya registrado", "Este pago ya está pagado."
+                )
                 return
 
             datos_pago = {
                 "id_pago": pago_obj.id_pago,
-                "cliente": self.clientes_dict.get(pago_obj.id_cliente, "Desconocido"),
+                "cliente": self.clientes_dict.get(
+                    pago_obj.id_cliente, "Desconocido"
+                ),
                 "mes": pago_obj.mes,
-                "cuota": pago_obj.cuota
+                "cuota": pago_obj.cuota,
             }
 
             def callback_confirmacion(metodo, fecha, concepto):
-
                 if not metodo:
-                    messagebox.showerror("Error", "Debe seleccionar un método de pago.")
+                    messagebox.showerror(
+                        "Error", "Debe seleccionar un método de pago."
+                    )
                     return
 
                 if not validar_fecha(fecha):
-                    messagebox.showerror("Fecha inválida", "Formato YYYY-MM-DD.")
+                    messagebox.showerror(
+                        "Fecha inválida", "Use el formato YYYY-MM-DD."
+                    )
                     return
 
                 try:
@@ -364,15 +462,18 @@ class PagoView(tk.Frame):
                         self.id_pago_seleccionado,
                         fecha,
                         metodo,
-                        concepto
+                        concepto,
                     )
-                    messagebox.showinfo("Éxito", "Pago marcado correctamente.")
+                    messagebox.showinfo(
+                        "Éxito", "Pago marcado correctamente."
+                    )
                     self.cargar_pagos()
 
                 except Exception as e:
-                    messagebox.showerror("Error al registrar pago", str(e))
+                    messagebox.showerror(
+                        "Error al registrar pago", str(e)
+                    )
 
-            # CORRECCIÓN IMPORTANTE:
             VentanaPago(self, datos_pago, callback_confirmacion)
 
         except Exception as e:
